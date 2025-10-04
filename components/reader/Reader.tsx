@@ -21,17 +21,20 @@ import {
 } from '@/components/ui/dialog'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/hooks/use-toast'
+import { useRingtone } from '@/hooks/use-ringtone'
 import Timer from './Timer'
 
 export default function Reader() {
   const router = useRouter()
   const { state, setTimerState, setTimeRemaining } = useSession()
   const { toast } = useToast()
+  const { isMuted, toggleMute, playRingtone, stopRingtone } = useRingtone()
   const [showTimeUpModal, setShowTimeUpModal] = useState(false)
 
   const handleTimeUp = useCallback(() => {
     setShowTimeUpModal(true)
-  }, [])
+    playRingtone()
+  }, [playRingtone])
 
   const handleTimeChange = useCallback(
     (timeMs: number) => {
@@ -49,10 +52,12 @@ export default function Reader() {
 
   const handleContinueReading = () => {
     setShowTimeUpModal(false)
+    stopRingtone()
   }
 
   const handleStartQuiz = () => {
     setShowTimeUpModal(false)
+    stopRingtone()
     router.push('/quiz')
   }
 
@@ -101,6 +106,8 @@ export default function Reader() {
             onStateChange={handleStateChange}
             timerState={state.timerState}
             timeRemainingMs={state.timeRemainingMs}
+            isMuted={isMuted}
+            onToggleMute={toggleMute}
           />
         </CardContent>
       </Card>

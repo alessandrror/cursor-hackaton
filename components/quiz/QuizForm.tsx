@@ -2,9 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, CheckCircle } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Input } from '@/components/ui/input'
@@ -12,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import { useSession } from '@/providers/SessionProvider'
 import { generateQuestions } from '@/lib/openai'
 import { useToast } from '@/hooks/use-toast'
+import QuizSkeleton from './QuizSkeleton'
 
 export default function QuizForm() {
   const router = useRouter()
@@ -114,14 +121,10 @@ export default function QuizForm() {
   }
 
   if (isGenerating) {
-    return (
-      <Card className="w-full">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin mb-4" />
-          <p className="text-muted-foreground">Generating questions...</p>
-        </CardContent>
-      </Card>
-    )
+    const wordCount = state.text.trim().split(/\s+/).length
+    const questionCount = Math.min(Math.max(Math.floor(wordCount / 100), 5), 20)
+    
+    return <QuizSkeleton questionCount={questionCount} />
   }
 
   if (state.questions.length === 0) {
