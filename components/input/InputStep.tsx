@@ -7,7 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useSession } from '@/providers/SessionProvider'
 import { extractTextFromPdf } from '@/lib/pdf'
@@ -19,7 +25,7 @@ export default function InputStep() {
   const { state, setApiKey, setSource, setText, setReadingTime } = useSession()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+
   const [isProcessing, setIsProcessing] = useState(false)
   const [text, setTextState] = useState(state.text || '')
   const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
@@ -28,7 +34,9 @@ export default function InputStep() {
   const readingTimeMinutes = calculateReadingTime(wordCount)
   const readingTimeMs = readingTimeMinutes * 60 * 1000
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -53,7 +61,8 @@ export default function InputStep() {
     } catch (error) {
       toast({
         title: 'PDF processing failed',
-        description: error instanceof Error ? error.message : 'Failed to process PDF',
+        description:
+          error instanceof Error ? error.message : 'Failed to process PDF',
         variant: 'destructive',
       })
     } finally {
@@ -70,7 +79,8 @@ export default function InputStep() {
     if (!apiKey.trim()) {
       toast({
         title: 'API key missing',
-        description: 'Please set NEXT_PUBLIC_OPENAI_API_KEY in your environment variables.',
+        description:
+          'Please set NEXT_PUBLIC_OPENAI_API_KEY in your environment variables.',
         variant: 'destructive',
       })
       return
@@ -154,9 +164,7 @@ export default function InputStep() {
         {/* Reading Time Preview */}
         {text.trim() && (
           <div className="flex items-center justify-center gap-2 p-4 bg-muted rounded-lg">
-            <Badge variant="secondary">
-              {wordCount} words
-            </Badge>
+            <Badge variant="secondary">{wordCount} words</Badge>
             <span className="text-sm text-muted-foreground">
               Estimated reading time: {formatTime(readingTimeMinutes * 60)}
             </span>

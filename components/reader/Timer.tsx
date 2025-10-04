@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Play, Pause, RotateCcw } from 'lucide-react'
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatTime, cn } from '@/lib/utils'
@@ -13,6 +13,8 @@ interface TimerProps {
   onStateChange: (state: 'idle' | 'running' | 'paused' | 'finished') => void
   timerState: 'idle' | 'running' | 'paused' | 'finished'
   timeRemainingMs: number
+  isMuted: boolean
+  onToggleMute: () => void
 }
 
 export default function Timer({
@@ -22,6 +24,8 @@ export default function Timer({
   onStateChange,
   timerState,
   timeRemainingMs,
+  isMuted,
+  onToggleMute,
 }: TimerProps) {
   const [displayTime, setDisplayTime] = useState(
     timeRemainingMs || initialTimeMs
@@ -36,12 +40,10 @@ export default function Timer({
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
 
-    if (timerState === 'running' && displayTime > 0) {
+    if (timerState === 'running') {
       interval = setInterval(() => {
         setDisplayTime((prev) => {
-          const newTime = prev - 1000
-
-          if (newTime <= 0) {
+          if (prev <= 0) {
             // Use setTimeout to defer the state updates to the next tick
             setTimeout(() => {
               onTimeUp()
@@ -50,6 +52,7 @@ export default function Timer({
             return 0
           }
 
+          const newTime = prev - 1000
           return newTime
         })
       }, 1000)
@@ -181,6 +184,20 @@ export default function Timer({
           >
             <RotateCcw />
           </Button>
+
+          <Button
+            onClick={onToggleMute}
+            variant="ghost"
+            size="icon"
+            aria-label={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
+            title={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
+          >
+            {isMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       ) : (
         <div className="flex gap-2">
@@ -220,6 +237,22 @@ export default function Timer({
             Reset
           </Button>
         </div>
+      )}
+
+      {!isFloating && (
+        <Button
+          onClick={onToggleMute}
+          variant="ghost"
+          size="lg"
+          className="gap-2"
+          title={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
+        >
+          {isMuted ? (
+            <VolumeX className="h-4 w-4" />
+          ) : (
+            <Volume2 className="h-4 w-4" />
+          )}
+        </Button>
       )}
     </div>
   )

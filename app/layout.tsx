@@ -8,7 +8,7 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-sans',
   display: 'swap',
-  weight: ['300','400','500','600','700'],
+  weight: ['300', '400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -23,10 +23,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${spaceGrotesk.variable} font-sans`} suppressHydrationWarning={true}>
+      <body
+        className={`${spaceGrotesk.variable} font-sans`}
+        suppressHydrationWarning={true}
+      >
         <SessionProvider>
           <div className="min-h-screen bg-background text-foreground">
-            <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
+            <div className="container mx-auto px-4 py-8 max-w-4xl">
+              {children}
+            </div>
           </div>
           <Toaster />
         </SessionProvider>
