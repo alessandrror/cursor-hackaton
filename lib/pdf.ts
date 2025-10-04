@@ -2,9 +2,10 @@
 
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
 
-// Configure PDF.js worker using npm package
-GlobalWorkerOptions.workerSrc =
-  '//unpkg.com/pdfjs-dist@4.0.0/build/pdf.worker.min.js'
+// Configure PDF.js worker to use local file from public directory
+if (typeof window !== 'undefined') {
+  GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs'
+}
 
 export async function extractTextFromPdf(file: File): Promise<string> {
   try {
