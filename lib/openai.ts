@@ -217,13 +217,10 @@ export function calculateScore(
 } {
   const difficultyPoints = { easy: 1, medium: 2, hard: 3 }
 
-
   let score = 0
   let totalPoints = 0
   let correctAnswers = 0
 
-  questions.forEach((question) => {
-    const userAnswer = answers.find((a) => a.questionId === question.id)
   questions.forEach((question) => {
     const userAnswer = answers.find((a) => a.questionId === question.id)
     const points = difficultyPoints[question.difficulty]
@@ -275,8 +272,6 @@ export function calculateScore(
     }
   })
 
-  const percentage =
-    totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0
   const percentage =
     totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0
 
