@@ -1,11 +1,7 @@
 ---
 alwaysApply: true
 ---
----
-description: 
-globs: 
-alwaysApply: true
----
+
 # Architecture & Guidelines
 
 ## Strict Requirements
