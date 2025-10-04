@@ -26,7 +26,12 @@
     "eslint-config-next": "^15.0.0",
     "prettier": "^3.0.0"
   },
-  "keywords": ["study", "timer", "quiz", "nextjs"],
+  "keywords": [
+    "study",
+    "timer",
+    "quiz",
+    "nextjs"
+  ],
   "author": "",
   "license": "ISC"
 }

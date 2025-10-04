@@ -1,8 +1,14 @@
 export function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(word => word.length > 0).length
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length
 }
 
-export function calculateReadingTime(wordCount: number, wordsPerMinute: number = 200): number {
+export function calculateReadingTime(
+  wordCount: number,
+  wordsPerMinute: number = 200
+): number {
   return Math.ceil(wordCount / wordsPerMinute)
 }
 

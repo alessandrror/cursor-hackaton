@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card'
 
 export default function HomePage() {
   return (
@@ -14,7 +20,8 @@ export default function HomePage() {
       <CardContent>
         <div className="text-center py-8">
           <p className="text-muted-foreground">
-            Configuration phase completed. Ready to build the application features.
+            Configuration phase completed. Ready to build the application
+            features.
           </p>
         </div>
       </CardContent>
