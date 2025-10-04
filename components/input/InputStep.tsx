@@ -194,7 +194,7 @@ export default function InputStep() {
             placeholder="Paste your study material here..."
             value={text}
             onChange={(e) => handleTextChange(e.target.value)}
-            className="min-h-[200px]"
+            className="min-h-[400px]"
           />
         </div>
 
