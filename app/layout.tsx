@@ -3,6 +3,8 @@ import { Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from '@/providers/SessionProvider'
 import { Toaster } from '@/components/ui/toaster'
+import Link from 'next/link'
+import CerebryxLogo from '@/components/branding/CerebryxLogo'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -12,8 +14,8 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'Study Timer & Quiz',
-  description: 'A study timer with AI-generated quizzes',
+  title: 'Cerebryx • Study Timer & Quiz',
+  description: 'Think deeper, remember longer.',
 }
 
 export default function RootLayout({
@@ -29,9 +31,15 @@ export default function RootLayout({
       >
         <SessionProvider>
           <div className="min-h-screen bg-background text-foreground">
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-              {children}
-            </div>
+            <header className="border-b border-border/60">
+              <div className="container mx-auto px-4 py-4 max-w-4xl flex items-center gap-3">
+                <Link href="/" className="flex items-center gap-2">
+                  <CerebryxLogo className="h-6 w-6" />
+                  <span className="text-sm font-semibold tracking-wide">Cerebryx</span>
+                </Link>
+              </div>
+            </header>
+            <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
           </div>
           <Toaster />
         </SessionProvider>

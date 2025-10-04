@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- Cerebryx tri-lobe with core, using brand hex values -->
+  <path d="M40 15 Q50 25 40 35 Q30 25 40 15" fill="#7c3aed" opacity="0.6"/>
+  <path d="M40 35 Q50 45 40 55 Q30 45 40 35" fill="#0ea5e9" opacity="0.6"/>
+  <path d="M40 55 Q50 65 40 75 Q30 65 40 55" fill="#14b8a6" opacity="0.6"/>
+  <circle cx="40" cy="40" r="12" stroke="#7c3aed" stroke-width="2" fill="none"/>
+  <circle cx="40" cy="40" r="6" fill="#7c3aed"/>
+</svg>
+
