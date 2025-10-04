@@ -25,5 +25,3 @@
 - [ ] Implement timer hook and component
 - [ ] Render text and controls
 - [ ] Zero-time modal + navigation
-
-

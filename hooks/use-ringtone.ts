@@ -29,7 +29,7 @@ export function useRingtone() {
   const toggleMute = () => {
     const newMutedState = !isMuted
     setIsMuted(newMutedState)
-    
+
     if (typeof window !== 'undefined') {
       localStorage.setItem(RINGTONE_MUTED_KEY, newMutedState.toString())
     }

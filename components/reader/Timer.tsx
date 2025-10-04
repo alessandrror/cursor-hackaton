@@ -5,7 +5,6 @@ import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatTime, cn } from '@/lib/utils'
-import { useRingtone } from '@/hooks/use-ringtone'
 
 interface TimerProps {
   initialTimeMs: number
@@ -14,6 +13,8 @@ interface TimerProps {
   onStateChange: (state: 'idle' | 'running' | 'paused' | 'finished') => void
   timerState: 'idle' | 'running' | 'paused' | 'finished'
   timeRemainingMs: number
+  isMuted: boolean
+  onToggleMute: () => void
 }
 
 export default function Timer({
@@ -23,10 +24,13 @@ export default function Timer({
   onStateChange,
   timerState,
   timeRemainingMs,
+  isMuted,
+  onToggleMute,
 }: TimerProps) {
-  const [displayTime, setDisplayTime] = useState(timeRemainingMs || initialTimeMs)
+  const [displayTime, setDisplayTime] = useState(
+    timeRemainingMs || initialTimeMs
+  )
   const lastReportedTime = useRef(displayTime)
-  const { isMuted, toggleMute } = useRingtone()
   const [isFloating, setIsFloating] = useState(false)
 
   useEffect(() => {
@@ -40,13 +44,13 @@ export default function Timer({
       interval = setInterval(() => {
         setDisplayTime((prev) => {
           const newTime = prev - 1000
-          
+
           if (newTime <= 0) {
             onTimeUp()
             onStateChange('finished')
             return 0
           }
-          
+
           return newTime
         })
       }, 1000)
@@ -129,8 +133,18 @@ export default function Timer({
           {formatTime(Math.ceil(displayTime / 1000))}
         </div>
         {!isFloating && (
-          <Badge variant={isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'}>
-            {isFinished ? 'Time\'s Up!' : isRunning ? 'Running' : isIdle ? 'Ready' : 'Paused'}
+          <Badge
+            variant={
+              isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'
+            }
+          >
+            {isFinished
+              ? "Time's Up!"
+              : isRunning
+                ? 'Running'
+                : isIdle
+                  ? 'Ready'
+                  : 'Paused'}
           </Badge>
         )}
       </div>
@@ -144,7 +158,12 @@ export default function Timer({
           )}
 
           {isRunning && (
-            <Button onClick={handlePause} variant="outline" size="icon" aria-label="Pause">
+            <Button
+              onClick={handlePause}
+              variant="outline"
+              size="icon"
+              aria-label="Pause"
+            >
               <Pause />
             </Button>
           )}
@@ -155,8 +174,27 @@ export default function Timer({
             </Button>
           )}
 
-          <Button onClick={handleReset} variant="outline" size="icon" aria-label="Reset">
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            size="icon"
+            aria-label="Reset"
+          >
             <RotateCcw />
+          </Button>
+
+          <Button
+            onClick={onToggleMute}
+            variant="ghost"
+            size="icon"
+            aria-label={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
+            title={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
+          >
+            {isMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
           </Button>
         </div>
       ) : (
@@ -169,7 +207,12 @@ export default function Timer({
           )}
 
           {isRunning && (
-            <Button onClick={handlePause} variant="outline" size="lg" className="gap-2">
+            <Button
+              onClick={handlePause}
+              variant="outline"
+              size="lg"
+              className="gap-2"
+            >
               <Pause className="h-4 w-4" />
               Pause
             </Button>
@@ -182,22 +225,31 @@ export default function Timer({
             </Button>
           )}
 
-          <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            size="lg"
+            className="gap-2"
+          >
             <RotateCcw className="h-4 w-4" />
             Reset
           </Button>
         </div>
       )}
-      
+
       {!isFloating && (
-        <Button 
-          onClick={toggleMute} 
-          variant="ghost" 
-          size="lg" 
+        <Button
+          onClick={onToggleMute}
+          variant="ghost"
+          size="lg"
           className="gap-2"
           title={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
         >
-          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          {isMuted ? (
+            <VolumeX className="h-4 w-4" />
+          ) : (
+            <Volume2 className="h-4 w-4" />
+          )}
         </Button>
       )}
     </div>

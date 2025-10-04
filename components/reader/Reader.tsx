@@ -4,8 +4,21 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clock, BookOpen, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/hooks/use-toast'
 import { useRingtone } from '@/hooks/use-ringtone'
@@ -15,7 +28,7 @@ export default function Reader() {
   const router = useRouter()
   const { state, setTimerState, setTimeRemaining } = useSession()
   const { toast } = useToast()
-  const { playRingtone, stopRingtone } = useRingtone()
+  const { isMuted, toggleMute, playRingtone, stopRingtone } = useRingtone()
   const [showTimeUpModal, setShowTimeUpModal] = useState(false)
 
   const handleTimeUp = () => {
@@ -27,7 +40,9 @@ export default function Reader() {
     setTimeRemaining(timeMs)
   }
 
-  const handleStateChange = (newState: 'idle' | 'running' | 'paused' | 'finished') => {
+  const handleStateChange = (
+    newState: 'idle' | 'running' | 'paused' | 'finished'
+  ) => {
     setTimerState(newState)
   }
 
@@ -55,12 +70,12 @@ export default function Reader() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>No content to read</CardTitle>
-          <CardDescription>Please go back and add some text or upload a PDF.</CardDescription>
+          <CardDescription>
+            Please go back and add some text or upload a PDF.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={() => router.push('/')}>
-            Go Back
-          </Button>
+          <Button onClick={() => router.push('/')}>Go Back</Button>
         </CardContent>
       </Card>
     )
@@ -87,6 +102,8 @@ export default function Reader() {
             onStateChange={handleStateChange}
             timerState={state.timerState}
             timeRemainingMs={state.timeRemainingMs}
+            isMuted={isMuted}
+            onToggleMute={toggleMute}
           />
         </CardContent>
       </Card>
@@ -113,11 +130,7 @@ export default function Reader() {
 
       {/* Action Buttons */}
       <div className="flex justify-center gap-4">
-        <Button
-          onClick={handleEarlyQuiz}
-          size="lg"
-          className="gap-2"
-        >
+        <Button onClick={handleEarlyQuiz} size="lg" className="gap-2">
           <CheckCircle className="h-4 w-4" />
           End Reading & Start Quiz
         </Button>
@@ -132,16 +145,15 @@ export default function Reader() {
               Time&apos;s Up! ⏰
             </DialogTitle>
             <DialogDescription>
-              Your reading time is complete. You can continue reading or start the quiz now.
+              Your reading time is complete. You can continue reading or start
+              the quiz now.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={handleContinueReading}>
               Continue Reading
             </Button>
-            <Button onClick={handleStartQuiz}>
-              Start Quiz
-            </Button>
+            <Button onClick={handleStartQuiz}>Start Quiz</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
