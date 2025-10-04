@@ -4,45 +4,8 @@
 
 @layer base {
   :root {
-    /* Light mode palette */
-    --background: 0 0% 100%; /* white */
-    --foreground: 222.2 84% 4.9%; /* #020817 */
-
-    /* Surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    /* Brand tokens */
-    --primary: 217.2 91.2% 59.8%; /* #3b82f6 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --success: 142.1 70.6% 45.3%; /* #22c55e */
-    --success-foreground: 0 0% 100%;
-
-    /* Support tokens */
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 217.2 91.2% 59.8%;
-    --radius: 0.5rem;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-
-  .dark {
-    /* Dark mode palette */
-    --background: 0 0% 4%; /* #0a0a0a */
+    /* Core palette (dark only) */
+    --background: 24 9.8% 5%; /* #0c0a09 */
     --foreground: 220 14% 91%; /* #e5e7eb */
 
     /* Surfaces */
@@ -51,14 +14,14 @@
     --popover: 0 0% 4%;
     --popover-foreground: 220 14% 91%;
 
-    /* Brand tokens */
-    --primary: 217.2 91.2% 59.8%; /* #3b82f6 */
+    /* Brand tokens — Cerebryx */
+    --primary: 262.1 83.3% 57.8%; /* #7c3aed */
     --primary-foreground: 0 0% 4%;
-    --secondary: 37.7 92.1% 50.2%; /* #f59e0b */
+    --secondary: 199.4 88.7% 53.1%; /* #0ea5e9 */
     --secondary-foreground: 0 0% 4%;
-    --accent: 330.4 81.2% 60.4%; /* #ec4899 */
+    --accent: 173.4 72.3% 41.8%; /* #14b8a6 */
     --accent-foreground: 0 0% 4%;
-    --success: 142.1 70.6% 45.3%; /* #22c55e */
+    --success: 83.7 85.4% 43.9%; /* #84cc16 */
     --success-foreground: 0 0% 4%;
 
     /* Support tokens */
@@ -68,7 +31,7 @@
     --destructive-foreground: 220 14% 91%;
     --border: 0 0% 14%;
     --input: 0 0% 14%;
-    --ring: 217.2 91.2% 59.8%;
+    --ring: 262.1 83.3% 57.8%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;

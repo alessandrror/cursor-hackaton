@@ -21,5 +21,3 @@
 
 - [ ] Implement fetch client with API key
 - [ ] Build prompt and parser with validation
-
-

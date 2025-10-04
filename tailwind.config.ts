@@ -12,6 +12,19 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-sans)'],
       },
+      keyframes: {
+        shimmer: {
+          '0%': {
+            'background-position': '-200% 0',
+          },
+          '100%': {
+            'background-position': '200% 0',
+          },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2s ease-in-out infinite',
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
