@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Play, Pause, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +23,9 @@ export default function Timer({
   timerState,
   timeRemainingMs,
 }: TimerProps) {
-  const [displayTime, setDisplayTime] = useState(timeRemainingMs || initialTimeMs)
+  const [displayTime, setDisplayTime] = useState(
+    timeRemainingMs || initialTimeMs
+  )
   const lastReportedTime = useRef(displayTime)
   const [isFloating, setIsFloating] = useState(false)
 
@@ -38,13 +40,16 @@ export default function Timer({
       interval = setInterval(() => {
         setDisplayTime((prev) => {
           const newTime = prev - 1000
-          
+
           if (newTime <= 0) {
-            onTimeUp()
-            onStateChange('finished')
+            // Use setTimeout to defer the state updates to the next tick
+            setTimeout(() => {
+              onTimeUp()
+              onStateChange('finished')
+            }, 0)
             return 0
           }
-          
+
           return newTime
         })
       }, 1000)
@@ -127,8 +132,18 @@ export default function Timer({
           {formatTime(Math.ceil(displayTime / 1000))}
         </div>
         {!isFloating && (
-          <Badge variant={isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'}>
-            {isFinished ? 'Time\'s Up!' : isRunning ? 'Running' : isIdle ? 'Ready' : 'Paused'}
+          <Badge
+            variant={
+              isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'
+            }
+          >
+            {isFinished
+              ? "Time's Up!"
+              : isRunning
+                ? 'Running'
+                : isIdle
+                  ? 'Ready'
+                  : 'Paused'}
           </Badge>
         )}
       </div>
@@ -142,7 +157,12 @@ export default function Timer({
           )}
 
           {isRunning && (
-            <Button onClick={handlePause} variant="outline" size="icon" aria-label="Pause">
+            <Button
+              onClick={handlePause}
+              variant="outline"
+              size="icon"
+              aria-label="Pause"
+            >
               <Pause />
             </Button>
           )}
@@ -153,7 +173,12 @@ export default function Timer({
             </Button>
           )}
 
-          <Button onClick={handleReset} variant="outline" size="icon" aria-label="Reset">
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            size="icon"
+            aria-label="Reset"
+          >
             <RotateCcw />
           </Button>
         </div>
@@ -167,7 +192,12 @@ export default function Timer({
           )}
 
           {isRunning && (
-            <Button onClick={handlePause} variant="outline" size="lg" className="gap-2">
+            <Button
+              onClick={handlePause}
+              variant="outline"
+              size="lg"
+              className="gap-2"
+            >
               <Pause className="h-4 w-4" />
               Pause
             </Button>
@@ -180,7 +210,12 @@ export default function Timer({
             </Button>
           )}
 
-          <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            size="lg"
+            className="gap-2"
+          >
             <RotateCcw className="h-4 w-4" />
             Reset
           </Button>
