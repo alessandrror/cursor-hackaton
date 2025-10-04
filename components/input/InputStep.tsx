@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, BookOpen } from 'lucide-react'
+import { Upload, BookOpen, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,6 +14,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { useSession } from '@/providers/SessionProvider'
 import { extractTextFromPdf } from '@/lib/pdf'
@@ -22,12 +30,14 @@ import { useToast } from '@/hooks/use-toast'
 
 export default function InputStep() {
   const router = useRouter()
-  const { state, setApiKey, setSource, setText, setReadingTime } = useSession()
+  const { state, setApiKey, setSource, setText, setReadingTime, clearSessionData, clearInputData } = useSession()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isProcessing, setIsProcessing] = useState(false)
   const [text, setTextState] = useState(state.text || '')
+  const [showClearDialog, setShowClearDialog] = useState(false)
+  const [showClearInputDialog, setShowClearInputDialog] = useState(false)
   const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
 
   const wordCount = countWords(text)
@@ -101,7 +111,34 @@ export default function InputStep() {
     router.push('/read')
   }
 
+  const handleClearForm = () => {
+    clearSessionData()
+    setTextState('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+    setShowClearDialog(false)
+    toast({
+      title: 'Form cleared',
+      description: 'All study material and quiz data have been cleared.',
+    })
+  }
+
+  const handleClearInput = () => {
+    clearInputData()
+    setTextState('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+    setShowClearInputDialog(false)
+    toast({
+      title: 'Input cleared',
+      description: 'Text/PDF input has been cleared. Quiz data remains intact.',
+    })
+  }
+
   const canSubmit = apiKey.trim() && text.trim() && !isProcessing
+  const hasContent = text.trim() || state.questions.length > 0
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -161,6 +198,22 @@ export default function InputStep() {
           />
         </div>
 
+        {/* Clear Input Button */}
+        {text.trim() && (
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setShowClearInputDialog(true)}
+              variant="outline"
+              size="sm"
+              disabled={isProcessing}
+              className="gap-2"
+            >
+              <Trash2 className="h-3 w-3" />
+              Clear Input
+            </Button>
+          </div>
+        )}
+
         {/* Reading Time Preview */}
         {text.trim() && (
           <div className="flex items-center justify-center gap-2 p-4 bg-muted rounded-lg">
@@ -180,7 +233,87 @@ export default function InputStep() {
         >
           Start Study Session
         </Button>
+
+        {/* Clear Form Button */}
+        {hasContent && (
+          <Button
+            onClick={() => setShowClearDialog(true)}
+            variant="outline"
+            disabled={isProcessing}
+            className="w-full"
+            size="lg"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear Form
+          </Button>
+        )}
       </CardContent>
+
+      {/* Clear Form Confirmation Dialog */}
+      <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Clear Study Session?
+            </DialogTitle>
+            <DialogDescription>
+              This will clear all your entered text/PDF and quiz data. This action cannot be undone.
+              {state.questions.length > 0 && (
+                <div className="mt-2 p-2 bg-destructive/10 rounded text-destructive">
+                  You have {state.questions.length} questions and {state.answers.length} answers that will be lost.
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearForm}
+            >
+              Clear Everything
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Input Confirmation Dialog */}
+      <Dialog open={showClearInputDialog} onOpenChange={setShowClearInputDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Clear Input Only?
+            </DialogTitle>
+            <DialogDescription>
+              This will clear your text/PDF input but keep any existing quiz data intact.
+              <div className="mt-2 p-2 bg-muted rounded text-sm">
+                Current input: {wordCount} words
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearInputDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearInput}
+            >
+              Clear Input
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Clock, BookOpen, CheckCircle } from 'lucide-react'
+import { Clock, BookOpen, CheckCircle, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -26,10 +26,11 @@ import Timer from './Timer'
 
 export default function Reader() {
   const router = useRouter()
-  const { state, setTimerState, setTimeRemaining } = useSession()
+  const { state, setTimerState, setTimeRemaining, clearSessionData } = useSession()
   const { toast } = useToast()
   const { isMuted, toggleMute, playRingtone, stopRingtone } = useRingtone()
   const [showTimeUpModal, setShowTimeUpModal] = useState(false)
+  const [showStartOverDialog, setShowStartOverDialog] = useState(false)
 
   const handleTimeUp = useCallback(() => {
     setShowTimeUpModal(true)
@@ -67,6 +68,17 @@ export default function Reader() {
       description: 'You finished reading early! Starting quiz...',
     })
     router.push('/quiz')
+  }
+
+  const handleStartOver = () => {
+    clearSessionData()
+    setShowStartOverDialog(false)
+    stopRingtone()
+    toast({
+      title: 'Starting over',
+      description: 'Cleared all study material and quiz data. Returning to home page.',
+    })
+    router.push('/')
   }
 
   if (!state.text) {
@@ -134,6 +146,15 @@ export default function Reader() {
 
       {/* Action Buttons */}
       <div className="flex justify-center gap-4">
+        <Button
+          onClick={() => setShowStartOverDialog(true)}
+          variant="outline"
+          size="lg"
+          className="gap-2"
+        >
+          <Home className="h-4 w-4" />
+          Start Over
+        </Button>
         <Button onClick={handleEarlyQuiz} size="lg" className="gap-2">
           <CheckCircle className="h-4 w-4" />
           End Reading & Start Quiz
@@ -158,6 +179,38 @@ export default function Reader() {
               Continue Reading
             </Button>
             <Button onClick={handleStartQuiz}>Start Quiz</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Start Over Confirmation Dialog */}
+      <Dialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Home className="h-5 w-5" />
+              Start Over?
+            </DialogTitle>
+            <DialogDescription>
+              This will clear your current study material and quiz. You&apos;ll return to the home page to start fresh.
+              <div className="mt-2 p-2 bg-muted rounded text-sm">
+                Current reading progress will be lost.
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowStartOverDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleStartOver}
+            >
+              Start Over
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
