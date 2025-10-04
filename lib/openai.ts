@@ -53,10 +53,10 @@ Text: ${text.substring(0, 4000)}`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages,
-        temperature: 0.7,
-        max_tokens: 2000,
+        temperature: 1,
+        max_completion_tokens: 2000,
       }),
     })
 

@@ -19,16 +19,17 @@ export interface Answer {
 export interface SessionState {
   // API key (not persisted)
   apiKey: string
-  
+
   // Source and content (persisted)
   source: 'pdf' | 'text' | null
   text: string
   readingTimeMs: number
-  
+
   // Quiz data (persisted)
   questions: Question[]
   answers: Answer[]
-  
+  forceRegenerate: boolean
+
   // Timer state (not persisted)
   timerState: 'idle' | 'running' | 'paused' | 'finished'
   timeRemainingMs: number
@@ -41,7 +42,12 @@ export type SessionAction =
   | { type: 'SET_READING_TIME'; payload: number }
   | { type: 'SET_QUESTIONS'; payload: Question[] }
   | { type: 'SET_ANSWER'; payload: Answer }
-  | { type: 'SET_TIMER_STATE'; payload: 'idle' | 'running' | 'paused' | 'finished' }
+  | { type: 'CLEAR_ANSWERS' }
+  | { type: 'FORCE_REGENERATE' }
+  | {
+      type: 'SET_TIMER_STATE'
+      payload: 'idle' | 'running' | 'paused' | 'finished'
+    }
   | { type: 'SET_TIME_REMAINING'; payload: number }
   | { type: 'RESET_SESSION' }
   | { type: 'HYDRATE_FROM_STORAGE'; payload: Partial<SessionState> }

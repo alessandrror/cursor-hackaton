@@ -1,16 +1,33 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, RotateCcw, Trophy, Target } from 'lucide-react'
+import { CheckCircle, RotateCcw, Trophy, Target, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useSession } from '@/providers/SessionProvider'
 import { calculateScore } from '@/lib/openai'
 
 export default function ResultsView() {
   const router = useRouter()
-  const { state, resetSession } = useSession()
+  const { state, resetSession, setQuestions, clearAnswers, forceRegenerate } =
+    useSession()
+  const [showRetakeDialog, setShowRetakeDialog] = useState(false)
 
   const results = calculateScore(state.questions, state.answers)
 
@@ -34,6 +51,22 @@ export default function ResultsView() {
   }
 
   const handleRetakeQuiz = () => {
+    setShowRetakeDialog(true)
+  }
+
+  const handleReuseQuiz = () => {
+    // Clear answers but keep the same questions
+    clearAnswers()
+    setShowRetakeDialog(false)
+    router.push('/quiz')
+  }
+
+  const handleGenerateNewQuiz = () => {
+    // Clear both questions and answers to generate new ones
+    setQuestions([])
+    clearAnswers()
+    forceRegenerate() // Force regeneration of questions
+    setShowRetakeDialog(false)
     router.push('/quiz')
   }
 
@@ -42,12 +75,12 @@ export default function ResultsView() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>No quiz data</CardTitle>
-          <CardDescription>Please complete a quiz to see results.</CardDescription>
+          <CardDescription>
+            Please complete a quiz to see results.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={() => router.push('/')}>
-            Start New Session
-          </Button>
+          <Button onClick={() => router.push('/')}>Start New Session</Button>
         </CardContent>
       </Card>
     )
@@ -64,10 +97,12 @@ export default function ResultsView() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className={`text-6xl font-bold ${getScoreColor(results.percentage)}`}>
+          <div
+            className={`text-6xl font-bold ${getScoreColor(results.percentage)}`}
+          >
             {results.percentage}%
           </div>
-          
+
           <div className="text-xl text-muted-foreground">
             {getScoreMessage(results.percentage)}
           </div>
@@ -96,11 +131,18 @@ export default function ResultsView() {
         <CardContent>
           <div className="space-y-4">
             {state.questions.map((question, index) => {
-              const userAnswer = state.answers.find(a => a.questionId === question.id)
-              const isCorrect = userAnswer?.answer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
-              
+              const userAnswer = state.answers.find(
+                (a) => a.questionId === question.id
+              )
+              const isCorrect =
+                userAnswer?.answer.toLowerCase().trim() ===
+                question.correctAnswer.toLowerCase().trim()
+
               return (
-                <div key={question.id} className="flex items-start gap-3 p-3 rounded-lg border">
+                <div
+                  key={question.id}
+                  className="flex items-start gap-3 p-3 rounded-lg border"
+                >
                   <div className="flex-shrink-0">
                     {isCorrect ? (
                       <CheckCircle className="h-5 w-5 text-green-400" />
@@ -110,7 +152,7 @@ export default function ResultsView() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">Question {index + 1}</span>
@@ -118,19 +160,23 @@ export default function ResultsView() {
                         {question.difficulty}
                       </Badge>
                     </div>
-                    
+
                     <p className="text-sm text-muted-foreground">
                       {question.question}
                     </p>
-                    
+
                     <div className="text-sm space-y-1">
                       <div>
                         <span className="font-medium">Your answer: </span>
-                        <span className={isCorrect ? 'text-green-400' : 'text-red-400'}>
+                        <span
+                          className={
+                            isCorrect ? 'text-green-400' : 'text-red-400'
+                          }
+                        >
                           {userAnswer?.answer || 'No answer'}
                         </span>
                       </div>
-                      
+
                       {!isCorrect && (
                         <div>
                           <span className="font-medium">Correct answer: </span>
@@ -150,7 +196,12 @@ export default function ResultsView() {
 
       {/* Action Buttons */}
       <div className="flex justify-center gap-4">
-        <Button onClick={handleRetakeQuiz} variant="outline" size="lg" className="gap-2">
+        <Button
+          onClick={handleRetakeQuiz}
+          variant="outline"
+          size="lg"
+          className="gap-2"
+        >
           <RotateCcw className="h-4 w-4" />
           Retake Quiz
         </Button>
@@ -159,6 +210,54 @@ export default function ResultsView() {
           Start New Session
         </Button>
       </div>
+
+      {/* Retake Quiz Dialog */}
+      <Dialog open={showRetakeDialog} onOpenChange={setShowRetakeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" />
+              Retake Quiz
+            </DialogTitle>
+            <DialogDescription>
+              Choose how you&apos;d like to retake the quiz
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium">Reuse Same Questions</h4>
+              <p className="text-sm text-muted-foreground">
+                Keep the current questions and just clear your answers. Good for
+                practicing the same material.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium">Generate New Questions</h4>
+              <p className="text-sm text-muted-foreground">
+                Create completely new questions based on your study material.
+                Fresh challenge!
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleReuseQuiz}
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reuse Questions
+            </Button>
+            <Button onClick={handleGenerateNewQuiz} className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Generate New
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

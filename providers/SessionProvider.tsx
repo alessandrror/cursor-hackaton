@@ -17,6 +17,7 @@ const initialState: SessionState = {
   readingTimeMs: 0,
   questions: [],
   answers: [],
+  forceRegenerate: false,
   timerState: 'idle',
   timeRemainingMs: 0,
 }
@@ -35,13 +36,23 @@ function sessionReducer(
     case 'SET_READING_TIME':
       return { ...state, readingTimeMs: action.payload }
     case 'SET_QUESTIONS':
-      return { ...state, questions: action.payload }
+      return { ...state, questions: action.payload, forceRegenerate: false }
     case 'SET_ANSWER':
       return {
         ...state,
         answers: state.answers
           .filter((a) => a.questionId !== action.payload.questionId)
           .concat(action.payload),
+      }
+    case 'CLEAR_ANSWERS':
+      return {
+        ...state,
+        answers: [],
+      }
+    case 'FORCE_REGENERATE':
+      return {
+        ...state,
+        forceRegenerate: true,
       }
     case 'SET_TIMER_STATE':
       return { ...state, timerState: action.payload }
@@ -67,6 +78,8 @@ interface SessionContextType {
   setReadingTime: (ms: number) => void
   setQuestions: (questions: Question[]) => void
   setAnswer: (answer: Answer) => void
+  clearAnswers: () => void
+  forceRegenerate: () => void
   setTimerState: (state: 'idle' | 'running' | 'paused' | 'finished') => void
   setTimeRemaining: (ms: number) => void
   resetSession: () => void
@@ -128,6 +141,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_QUESTIONS', payload: questions }),
     setAnswer: (answer: Answer) =>
       dispatch({ type: 'SET_ANSWER', payload: answer }),
+    clearAnswers: () => dispatch({ type: 'CLEAR_ANSWERS' }),
+    forceRegenerate: () => dispatch({ type: 'FORCE_REGENERATE' }),
     setTimerState: (timerState: 'idle' | 'running' | 'paused' | 'finished') =>
       dispatch({ type: 'SET_TIMER_STATE', payload: timerState }),
     setTimeRemaining: (ms: number) =>
