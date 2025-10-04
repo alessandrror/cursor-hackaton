@@ -83,3 +83,28 @@ Create a Next.js 15 app for a study timer and quiz application with the followin
 - Parse JSON response carefully (handle markdown code blocks if present)
 
 The project is now fully implemented with Next.js 15, TypeScript, Tailwind CSS, shadcn/ui components, and PDF.js integration.
+
+## Roadmap: Upcoming Phases (Nice-to-have)
+
+These are planned additions. Current app behavior remains as documented above until these are implemented.
+
+- Reader: Early stop + celebration
+  - Add an "End reading & start quiz" button in the reading step.
+  - If stopped before the estimated time ends, celebrate with a confetti animation and a success toast, then proceed to the quiz.
+
+- Quiz and Scoring (max score = 10)
+  - Force the total quiz points to equal 10, scaling per-question points by difficulty so the sum is exactly 10.
+  - Show per-question point badges alongside difficulty.
+
+- Results and Feedback
+  - For incorrect answers, show the user's answer, the correct answer, and a brief explanation.
+  - If your score is less than 10, offer a retake dialog: "Reuse the same questions" or "Generate a new set".
+
+- Optional History (localStorage)
+  - Add an opt-in history of past sessions stored locally (no backend), including timestamp, source (PDF/text/selection), timing, per-question outcomes, and the final score out of 10.
+  - Provide a History page to list sessions and a Settings page to enable/disable, clear, or export the history.
+
+- Browser Extension (Chrome MV3)
+  - Context menu action: "Practice selected text" to send selected text to the app, pre-filling the input.
+  - Popup quick-quiz with question count scaled to selection length (min 3, max 10).
+  - "Open App to Upload PDF" action; PDF uploads continue in the web app (not in the extension).
