@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Play, Pause, RotateCcw } from 'lucide-react'
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatTime } from '@/lib/utils'
+import { useRingtone } from '@/hooks/use-ringtone'
 
 interface TimerProps {
   initialTimeMs: number
@@ -25,6 +26,7 @@ export default function Timer({
 }: TimerProps) {
   const [displayTime, setDisplayTime] = useState(timeRemainingMs || initialTimeMs)
   const lastReportedTime = useRef(displayTime)
+  const { isMuted, toggleMute } = useRingtone()
 
   useEffect(() => {
     setDisplayTime(timeRemainingMs || initialTimeMs)
@@ -116,6 +118,16 @@ export default function Timer({
         <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
           <RotateCcw className="h-4 w-4" />
           Reset
+        </Button>
+        
+        <Button 
+          onClick={toggleMute} 
+          variant="ghost" 
+          size="lg" 
+          className="gap-2"
+          title={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
+        >
+          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </Button>
       </div>
     </div>
