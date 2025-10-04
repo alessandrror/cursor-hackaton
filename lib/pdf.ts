@@ -1,13 +1,29 @@
 'use client'
 
-import { GlobalWorkerOptions } from 'pdfjs-dist'
+import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
 
-// Configure PDF.js worker - using CDN for now
+// Configure PDF.js worker using npm package
 GlobalWorkerOptions.workerSrc =
-  'https://unpkg.com/pdfjs-dist@4.0.0/build/pdf.worker.min.js'
+  '//unpkg.com/pdfjs-dist@4.0.0/build/pdf.worker.min.js'
 
-// Placeholder function - will be implemented in next phase
 export async function extractTextFromPdf(file: File): Promise<string> {
-  // TODO: Implement PDF text extraction
-  throw new Error('PDF extraction not yet implemented')
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const pdf = await getDocument({ data: arrayBuffer }).promise
+
+    let fullText = ''
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum)
+      const textContent = await page.getTextContent()
+      const pageText = textContent.items.map((item: any) => item.str).join(' ')
+      fullText += pageText + '\n'
+    }
+
+    return fullText.trim()
+  } catch (error) {
+    throw new Error(
+      'Failed to extract text from PDF. Please try a different file.'
+    )
+  }
 }

@@ -21,6 +21,18 @@ Create a Next.js 15 app for a study timer and quiz application with the followin
 7. Add an `i18n.ts` placeholder exporting `defaultLocale: 'en'` and `locales: ['en']`
 8. Defer provider wiring and string translations to the Roadmap instructions below
 
+## Environment Setup
+
+Create a `.env.local` file in the project root with your OpenAI API key:
+
+```bash
+# OpenAI API Key
+# Get your API key from: https://platform.openai.com/api-keys
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+```
+
+**Important**: Replace `your_openai_api_key_here` with your actual OpenAI API key. The application will automatically use this environment variable instead of requiring manual input.
+
 ## Application Features
 
 ### Step 1: Input (Landing Page)
