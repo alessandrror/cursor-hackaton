@@ -26,5 +26,3 @@
 - [ ] Wire PDF upload to `extractTextFromPdf`
 - [ ] Compute word count + reading time
 - [ ] Save to session and navigate
-
-

@@ -20,5 +20,3 @@
 
 - [ ] Configure worker using `?url` import or equivalent
 - [ ] Implement text extraction with try/catch
-
-

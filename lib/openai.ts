@@ -37,19 +37,20 @@ Text: ${text.substring(0, 4000)}`
   const messages: OpenAIMessage[] = [
     {
       role: 'system',
-      content: 'You are a helpful assistant that generates educational quiz questions. Always respond with valid JSON only, no markdown formatting or additional text.'
+      content:
+        'You are a helpful assistant that generates educational quiz questions. Always respond with valid JSON only, no markdown formatting or additional text.',
     },
     {
       role: 'user',
-      content: prompt
-    }
+      content: prompt,
+    },
   ]
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -62,7 +63,9 @@ Text: ${text.substring(0, 4000)}`
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(`OpenAI API error: ${response.status} ${errorData.error?.message || response.statusText}`)
+      throw new Error(
+        `OpenAI API error: ${response.status} ${errorData.error?.message || response.statusText}`
+      )
     }
 
     const data: OpenAIResponse = await response.json()
@@ -73,10 +76,13 @@ Text: ${text.substring(0, 4000)}`
     }
 
     // Clean up the response - remove markdown code blocks if present
-    const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    
+    const cleanedContent = content
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim()
+
     const questions: Question[] = JSON.parse(cleanedContent)
-    
+
     // Validate the response
     if (!Array.isArray(questions)) {
       throw new Error('Invalid response format: expected array of questions')
@@ -95,14 +101,18 @@ Text: ${text.substring(0, 4000)}`
     return validatedQuestions
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error('Failed to parse questions from OpenAI. Please try again.')
+      throw new Error(
+        'Failed to parse questions from OpenAI. Please try again.'
+      )
     }
-    
+
     if (error instanceof Error && error.message.includes('API error')) {
       throw error
     }
-    
-    throw new Error('Failed to generate questions. Please check your API key and try again.')
+
+    throw new Error(
+      'Failed to generate questions. Please check your API key and try again.'
+    )
   }
 }
 
@@ -207,10 +217,13 @@ export function calculateScore(
 } {
   const difficultyPoints = { easy: 1, medium: 2, hard: 3 }
 
+
   let score = 0
   let totalPoints = 0
   let correctAnswers = 0
 
+  questions.forEach((question) => {
+    const userAnswer = answers.find((a) => a.questionId === question.id)
   questions.forEach((question) => {
     const userAnswer = answers.find((a) => a.questionId === question.id)
     const points = difficultyPoints[question.difficulty]
@@ -262,6 +275,8 @@ export function calculateScore(
     }
   })
 
+  const percentage =
+    totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0
   const percentage =
     totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0
 
