@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from '@/providers/SessionProvider'
+import { ThemeProvider } from '@/providers/ThemeProvider'
 import { Toaster } from '@/components/ui/toaster'
 import Navigation from '@/components/Navigation'
 
@@ -23,17 +24,23 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${spaceGrotesk.variable} font-sans`} suppressHydrationWarning={true}>
-        <SessionProvider>
-          <div className="min-h-screen bg-background text-foreground">
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-              <Navigation />
-              {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+        >
+          <SessionProvider>
+            <div className="min-h-screen bg-background text-foreground">
+              <div className="container mx-auto px-4 py-8 max-w-4xl">
+                <Navigation />
+                {children}
+              </div>
             </div>
-          </div>
-          <Toaster />
-        </SessionProvider>
+            <Toaster />
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

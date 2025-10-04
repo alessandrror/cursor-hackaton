@@ -88,8 +88,8 @@ NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
 - PDF parsing: Use pdfjs-dist to extract text from uploaded PDFs
 - OpenAI API call with proper error handling
 - No backend - everything runs in browser
-- No localStorage - single session only
-- Dark mode only (no theme toggle)
+- Optional localStorage for session history (enabled by default, configurable in Settings)
+- Light and dark mode with theme toggle (defaults to dark)
 
 ## Styling
 
@@ -98,7 +98,7 @@ NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
 - Use lucide-react icons: Upload, Clock, Play, BookOpen, CheckCircle
 - Responsive design, max-width container
 - Color scheme: Blue/Indigo primary, Green for success, Red for urgency
-- Dark mode only (no light mode toggle)
+- Light and dark mode with theme toggle in navigation
 
 ## Error Handling
 

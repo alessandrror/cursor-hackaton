@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BookOpen, History, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -18,6 +19,7 @@ export default function Navigation() {
       </Link>
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Link href="/history">
           <Button
             variant={isActive('/history') ? 'default' : 'ghost'}

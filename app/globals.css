@@ -4,7 +4,44 @@
 
 @layer base {
   :root {
-    /* Core palette (dark only) */
+    /* Light mode palette */
+    --background: 0 0% 100%; /* white */
+    --foreground: 222.2 84% 4.9%; /* #020817 */
+
+    /* Surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Brand tokens */
+    --primary: 217.2 91.2% 59.8%; /* #3b82f6 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --success: 142.1 70.6% 45.3%; /* #22c55e */
+    --success-foreground: 0 0% 100%;
+
+    /* Support tokens */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 217.2 91.2% 59.8%;
+    --radius: 0.5rem;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+
+  .dark {
+    /* Dark mode palette */
     --background: 0 0% 4%; /* #0a0a0a */
     --foreground: 220 14% 91%; /* #e5e7eb */
 
@@ -43,6 +80,9 @@
 @layer base {
   * {
     @apply border-border;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
   }
   body {
     @apply bg-background text-foreground;
