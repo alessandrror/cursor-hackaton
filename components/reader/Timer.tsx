@@ -40,12 +40,10 @@ export default function Timer({
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
 
-    if (timerState === 'running' && displayTime > 0) {
+    if (timerState === 'running') {
       interval = setInterval(() => {
         setDisplayTime((prev) => {
-          const newTime = prev - 1000
-
-          if (newTime <= 0) {
+          if (prev <= 0) {
             // Use setTimeout to defer the state updates to the next tick
             setTimeout(() => {
               onTimeUp()
@@ -54,6 +52,7 @@ export default function Timer({
             return 0
           }
 
+          const newTime = prev - 1000
           return newTime
         })
       }, 1000)
