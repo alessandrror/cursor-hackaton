@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatTime } from '@/lib/utils'
+import { formatTime, cn } from '@/lib/utils'
 import { useRingtone } from '@/hooks/use-ringtone'
 
 interface TimerProps {
@@ -27,6 +27,7 @@ export default function Timer({
   const [displayTime, setDisplayTime] = useState(timeRemainingMs || initialTimeMs)
   const lastReportedTime = useRef(displayTime)
   const { isMuted, toggleMute } = useRingtone()
+  const [isFloating, setIsFloating] = useState(false)
 
   useEffect(() => {
     setDisplayTime(timeRemainingMs || initialTimeMs)
@@ -64,6 +65,33 @@ export default function Timer({
     }
   }, [displayTime, onTimeChange])
 
+  // Collapse and float when scrolling beyond 30% of viewport height
+  useEffect(() => {
+    const threshold = window.innerHeight * 0.3
+    let last = false
+    let raf = 0
+
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const next = window.scrollY > threshold
+        if (next !== last) {
+          last = next
+          setIsFloating(next)
+        }
+      })
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
   const handleStart = () => {
     onStateChange('running')
   }
@@ -83,43 +111,85 @@ export default function Timer({
   const isIdle = timerState === 'idle'
 
   return (
-    <div className="flex flex-col items-center space-y-4">
+    <div
+      className={cn(
+        'flex flex-col items-center space-y-4 transition-all duration-300 ease-in',
+        isFloating
+          ? 'fixed top-4 right-4 z-50 w-auto rounded-lg border bg-background/80 backdrop-blur px-3 py-2 shadow-lg'
+          : 'static'
+      )}
+    >
       <div className="text-center">
-        <div className="text-6xl font-mono font-bold mb-2">
+        <div
+          className={cn(
+            'font-mono font-bold mb-2 transition-all duration-300 ease-in',
+            isFloating ? 'text-3xl' : 'text-6xl'
+          )}
+        >
           {formatTime(Math.ceil(displayTime / 1000))}
         </div>
-        <Badge variant={isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'}>
-          {isFinished ? 'Time\'s Up!' : isRunning ? 'Running' : isIdle ? 'Ready' : 'Paused'}
-        </Badge>
+        {!isFloating && (
+          <Badge variant={isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'}>
+            {isFinished ? 'Time\'s Up!' : isRunning ? 'Running' : isIdle ? 'Ready' : 'Paused'}
+          </Badge>
+        )}
       </div>
+
+      {isFloating ? (
+        <div className="flex gap-2">
+          {isIdle && (
+            <Button onClick={handleStart} size="icon" aria-label="Start">
+              <Play />
+            </Button>
+          )}
+
+          {isRunning && (
+            <Button onClick={handlePause} variant="outline" size="icon" aria-label="Pause">
+              <Pause />
+            </Button>
+          )}
+
+          {timerState === 'paused' && (
+            <Button onClick={handleStart} size="icon" aria-label="Resume">
+              <Play />
+            </Button>
+          )}
+
+          <Button onClick={handleReset} variant="outline" size="icon" aria-label="Reset">
+            <RotateCcw />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          {isIdle && (
+            <Button onClick={handleStart} size="lg" className="gap-2">
+              <Play className="h-4 w-4" />
+              Start
+            </Button>
+          )}
+
+          {isRunning && (
+            <Button onClick={handlePause} variant="outline" size="lg" className="gap-2">
+              <Pause className="h-4 w-4" />
+              Pause
+            </Button>
+          )}
+
+          {timerState === 'paused' && (
+            <Button onClick={handleStart} size="lg" className="gap-2">
+              <Play className="h-4 w-4" />
+              Resume
+            </Button>
+          )}
+
+          <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </Button>
+        </div>
+      )}
       
-      <div className="flex gap-2">
-        {isIdle && (
-          <Button onClick={handleStart} size="lg" className="gap-2">
-            <Play className="h-4 w-4" />
-            Start
-          </Button>
-        )}
-        
-        {isRunning && (
-          <Button onClick={handlePause} variant="outline" size="lg" className="gap-2">
-            <Pause className="h-4 w-4" />
-            Pause
-          </Button>
-        )}
-        
-        {timerState === 'paused' && (
-          <Button onClick={handleStart} size="lg" className="gap-2">
-            <Play className="h-4 w-4" />
-            Resume
-          </Button>
-        )}
-        
-        <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
-          <RotateCcw className="h-4 w-4" />
-          Reset
-        </Button>
-        
+      {!isFloating && (
         <Button 
           onClick={toggleMute} 
           variant="ghost" 
@@ -129,7 +199,7 @@ export default function Timer({
         >
           {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </Button>
-      </div>
+      )}
     </div>
   )
 }
