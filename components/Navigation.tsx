@@ -15,7 +15,7 @@ export default function Navigation() {
     <nav className="flex items-center justify-between my-8 max-w-4xl mx-auto">
       <Link href="/" className="flex items-center gap-2 text-2xl font-bold">
         <BookOpen className="h-6 w-6" />
-        <span>Study Timer & Quiz</span>
+        <span>Cerebryx</span>
       </Link>
 
       <div className="flex items-center gap-2">

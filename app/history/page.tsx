@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import HistoryView from '@/components/history/HistoryView'
 
 export const metadata: Metadata = {
-  title: 'History • Study Timer & Quiz',
+  title: 'History • Cerebryx',
   description: 'View your past study sessions',
 }
 

@@ -108,7 +108,7 @@ export default function InputStep() {
       <CardHeader>
         <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2">
           <BookOpen className="h-8 w-8" />
-          Study Timer & Quiz
+          Cerebryx
         </CardTitle>
         <CardDescription className="text-center">
           Upload a PDF or paste text to start your study session
