@@ -26,25 +26,25 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${spaceGrotesk.variable} font-sans`}
         suppressHydrationWarning={true}
       >
-        <SessionProvider>
-          <div className="min-h-screen bg-background text-foreground">
-            <header className="border-b border-border/60">
-              <div className="container mx-auto px-4 py-4 max-w-4xl flex items-center gap-3">
-                <Link href="/" className="flex items-center gap-2">
-                  <CerebryxLogo className="h-6 w-6" />
-                  <span className="text-sm font-semibold tracking-wide">Cerebryx</span>
-                </Link>
-              </div>
-            </header>
-            <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
-          </div>
-          <Toaster />
-        </SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          forcedTheme="dark"
+        >
+          <SessionProvider>
+            <div className="min-h-screen bg-background text-foreground">
+              <Navigation />
+              <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
+            </div>
+            <Toaster />
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
