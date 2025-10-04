@@ -2,7 +2,11 @@ import type { Metadata } from 'next'
 import { Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from '@/providers/SessionProvider'
+import { ThemeProvider } from '@/providers/ThemeProvider'
 import { Toaster } from '@/components/ui/toaster'
+import Navigation from '@/components/Navigation'
+import Link from 'next/link'
+import CerebryxLogo from '@/components/branding/CerebryxLogo'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -12,8 +16,8 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'Study Timer & Quiz',
-  description: 'A study timer with AI-generated quizzes',
+  title: 'Cerebryx • Study Timer & Quiz',
+  description: 'Think deeper, remember longer.',
 }
 
 export default function RootLayout({
@@ -22,19 +26,24 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${spaceGrotesk.variable} font-sans`}
         suppressHydrationWarning={true}
       >
-        <SessionProvider>
-          <div className="min-h-screen bg-background text-foreground">
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-              {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={true}
+        >
+          <SessionProvider>
+            <div className="min-h-screen bg-background text-foreground">
+              <Navigation />
+              <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
             </div>
-          </div>
-          <Toaster />
-        </SessionProvider>
+            <Toaster />
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

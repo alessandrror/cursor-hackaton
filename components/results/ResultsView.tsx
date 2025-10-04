@@ -1,8 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, RotateCcw, Trophy, Target, RefreshCw } from 'lucide-react'
+import {
+  CheckCircle,
+  RotateCcw,
+  Trophy,
+  Target,
+  RefreshCw,
+  Brain,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -21,15 +28,153 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useSession } from '@/providers/SessionProvider'
-import { calculateScore } from '@/lib/openai'
+import { calculateScore, analyzeOpenEndedAnswer } from '@/lib/openai'
+import { useHistory } from '@/hooks/useHistory'
+import { HistoryEntry } from '@/types/history'
+import { useToast } from '@/hooks/use-toast'
+
+interface QuestionAnalysis {
+  questionId: string
+  score: number
+  maxScore: number
+  feedback: string
+  isCorrect: boolean
+  isAnalyzed: boolean
+}
 
 export default function ResultsView() {
   const router = useRouter()
   const { state, resetSession, setQuestions, clearAnswers, forceRegenerate } =
     useSession()
+  const { addEntry, settings } = useHistory()
+  const { toast } = useToast()
   const [showRetakeDialog, setShowRetakeDialog] = useState(false)
+  const [hasSaved, setHasSaved] = useState(false)
+  const [hasShownHistoryNotice, setHasShownHistoryNotice] = useState(false)
+  const [questionAnalyses, setQuestionAnalyses] = useState<QuestionAnalysis[]>(
+    []
+  )
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   const results = calculateScore(state.questions, state.answers)
+
+  // Save to history on first render
+  useEffect(() => {
+    if (state.questions.length > 0 && state.answers.length > 0 && !hasSaved) {
+      const entry: HistoryEntry = {
+        id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        source: {
+          type: state.source || 'text',
+          size: state.text.trim().split(/\s+/).length,
+        },
+        reading: {
+          estimatedSec: Math.floor(state.readingTimeMs / 1000),
+          actualSec: Math.floor((state.readingTimeMs - state.timeRemainingMs) / 1000),
+          earlyStop: state.timerState !== 'finished',
+        },
+        quiz: {
+          questionCount: state.questions.length,
+          difficulty: {
+            easy: state.questions.filter(q => q.difficulty === 'easy').length,
+            medium: state.questions.filter(q => q.difficulty === 'medium').length,
+            hard: state.questions.filter(q => q.difficulty === 'hard').length,
+          },
+          answers: state.questions.map(q => {
+            const userAnswer = state.answers.find(a => a.questionId === q.id)
+            const isCorrect = userAnswer?.answer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()
+            const difficultyPoints = { easy: 1, medium: 2, hard: 3 }
+            
+            return {
+              questionId: q.id,
+              type: q.type,
+              question: q.question,
+              userAnswer: userAnswer?.answer || '',
+              correctAnswer: q.correctAnswer,
+              correct: isCorrect,
+              difficulty: q.difficulty,
+              points: difficultyPoints[q.difficulty],
+            }
+          }),
+          score: results.score,
+          totalPoints: results.totalPoints,
+          percentage: results.percentage,
+        },
+      }
+
+      addEntry(entry)
+      setHasSaved(true)
+      
+      // Show toast if history was saved
+      if (settings.enabled && !hasShownHistoryNotice) {
+        toast({
+          title: 'Session saved to history',
+          description: 'View your progress in the History page',
+        })
+        setHasShownHistoryNotice(true)
+      }
+    }
+  }, [state, results, hasSaved, hasShownHistoryNotice, settings.enabled, addEntry, toast, router])
+
+  // Analyze open-ended questions
+  useEffect(() => {
+    const analyzeQuestions = async () => {
+      const openEndedQuestions = state.questions.filter(
+        (q) => q.type === 'short-answer'
+      )
+      if (openEndedQuestions.length === 0) return
+
+      setIsAnalyzing(true)
+      const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || state.apiKey
+
+      const analyses = await Promise.all(
+        openEndedQuestions.map(async (question) => {
+          const userAnswer = state.answers.find(
+            (a) => a.questionId === question.id
+          )
+          if (!userAnswer) {
+            return {
+              questionId: question.id,
+              score: 0,
+              maxScore: 1,
+              feedback: 'No answer provided',
+              isCorrect: false,
+              isAnalyzed: false,
+            }
+          }
+
+          try {
+            const analysis = await analyzeOpenEndedAnswer(
+              question.question,
+              userAnswer.answer,
+              question.correctAnswer,
+              apiKey
+            )
+            return {
+              questionId: question.id,
+              ...analysis,
+              isAnalyzed: true,
+            }
+          } catch (error) {
+            console.error('Error analyzing question:', error)
+            return {
+              questionId: question.id,
+              score: 0,
+              maxScore: 1,
+              feedback: 'Analysis failed - using basic scoring',
+              isCorrect: false,
+              isAnalyzed: false,
+            }
+          }
+        })
+      )
+
+      setQuestionAnalyses(analyses)
+      setIsAnalyzing(false)
+    }
+
+    analyzeQuestions()
+  }, [state.questions, state.answers, state.apiKey])
 
   const getScoreColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-400'
@@ -129,19 +274,42 @@ export default function ResultsView() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {isAnalyzing && (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Brain className="h-4 w-4 animate-pulse" />
+                <span>Analyzing open-ended questions...</span>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             {state.questions.map((question, index) => {
               const userAnswer = state.answers.find(
                 (a) => a.questionId === question.id
               )
+              const analysis = questionAnalyses.find(
+                (a) => a.questionId === question.id
+              )
+
+              // Use AI analysis for short-answer questions, basic comparison for others
               const isCorrect =
-                userAnswer?.answer.toLowerCase().trim() ===
-                question.correctAnswer.toLowerCase().trim()
+                question.type === 'short-answer' && analysis?.isAnalyzed
+                  ? analysis.isCorrect
+                  : userAnswer?.answer.toLowerCase().trim() ===
+                    question.correctAnswer.toLowerCase().trim()
+
+              const score =
+                question.type === 'short-answer' && analysis?.isAnalyzed
+                  ? analysis.score
+                  : isCorrect
+                    ? 1
+                    : 0
 
               return (
                 <div
                   key={question.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border"
+                  className="flex items-start gap-3 p-4 rounded-lg border"
                 >
                   <div className="flex-shrink-0">
                     {isCorrect ? (
@@ -153,19 +321,34 @@ export default function ResultsView() {
                     )}
                   </div>
 
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Question {index + 1}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {question.difficulty}
-                      </Badge>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          Question {index + 1}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {question.difficulty}
+                        </Badge>
+                        {question.type === 'short-answer' && (
+                          <Badge variant="secondary" className="text-xs">
+                            Open-ended
+                          </Badge>
+                        )}
+                      </div>
+                      {question.type === 'short-answer' &&
+                        analysis?.isAnalyzed && (
+                          <div className="text-sm text-muted-foreground">
+                            Score: {Math.round(score * 100)}%
+                          </div>
+                        )}
                     </div>
 
                     <p className="text-sm text-muted-foreground">
                       {question.question}
                     </p>
 
-                    <div className="text-sm space-y-1">
+                    <div className="text-sm space-y-2">
                       <div>
                         <span className="font-medium">Your answer: </span>
                         <span
@@ -177,13 +360,27 @@ export default function ResultsView() {
                         </span>
                       </div>
 
-                      {!isCorrect && (
-                        <div>
-                          <span className="font-medium">Correct answer: </span>
-                          <span className="text-green-400">
-                            {question.correctAnswer}
-                          </span>
+                      {question.type === 'short-answer' &&
+                      analysis?.isAnalyzed ? (
+                        <div className="bg-muted/50 p-3 rounded-md">
+                          <div className="font-medium text-sm mb-1">
+                            AI Analysis:
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {analysis.feedback}
+                          </p>
                         </div>
+                      ) : (
+                        !isCorrect && (
+                          <div>
+                            <span className="font-medium">
+                              Correct answer:{' '}
+                            </span>
+                            <span className="text-green-400">
+                              {question.correctAnswer}
+                            </span>
+                          </div>
+                        )
                       )}
                     </div>
                   </div>

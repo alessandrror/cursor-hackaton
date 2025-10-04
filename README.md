@@ -88,8 +88,8 @@ NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
 - PDF parsing: Use pdfjs-dist to extract text from uploaded PDFs
 - OpenAI API call with proper error handling
 - No backend - everything runs in browser
-- No localStorage - single session only
-- Dark mode only (no theme toggle)
+- Optional localStorage for session history (enabled by default, configurable in Settings)
+- Light and dark mode with theme toggle (defaults to dark)
 
 ## Styling
 
@@ -98,7 +98,7 @@ NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
 - Use lucide-react icons: Upload, Clock, Play, BookOpen, CheckCircle
 - Responsive design, max-width container
 - Color scheme: Blue/Indigo primary, Green for success, Red for urgency
-- Dark mode only (no light mode toggle)
+- Light and dark mode with theme toggle in navigation
 
 ## Error Handling
 
@@ -118,16 +118,12 @@ These are planned additions. Current app behavior remains as documented above un
   - Add an "End reading & start quiz" button in the reading step.
   - If stopped before the estimated time ends, celebrate with a confetti animation and a success toast, then proceed to the quiz.
 
-- Quiz and Scoring (max score = 10)
-  - Force the total quiz points to equal 10, scaling per-question points by difficulty so the sum is exactly 10.
-  - Show per-question point badges alongside difficulty.
-
 - Results and Feedback
   - For incorrect answers, show the user's answer, the correct answer, and a brief explanation.
   - If your score is less than 10, offer a retake dialog: "Reuse the same questions" or "Generate a new set".
 
 - Optional History (localStorage)
-  - Add an opt-in history of past sessions stored locally (no backend), including timestamp, source (PDF/text/selection), timing, per-question outcomes, and the final score out of 10.
+  - Add an opt-in history of past sessions stored locally (no backend), including timestamp, source (PDF/text/selection), timing, per-question outcomes, and the final score out of 100.
   - Provide a History page to list sessions and a Settings page to enable/disable, clear, or export the history.
 
 - Browser Extension (Chrome MV3)

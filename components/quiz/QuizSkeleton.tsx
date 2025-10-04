@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckCircle } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface QuizSkeletonProps {
@@ -34,13 +34,13 @@ export default function QuizSkeleton({ questionCount }: QuizSkeletonProps) {
               </CardTitle>
               <Skeleton className="h-5 w-16 rounded-full" />
             </div>
-            <CardDescription>
+            <div className="text-sm text-muted-foreground">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
               </div>
-            </CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
