@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle, RotateCcw, Trophy, Target, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -22,14 +22,79 @@ import {
 } from '@/components/ui/dialog'
 import { useSession } from '@/providers/SessionProvider'
 import { calculateScore } from '@/lib/openai'
+import { useHistory } from '@/hooks/useHistory'
+import { HistoryEntry } from '@/types/history'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ResultsView() {
   const router = useRouter()
   const { state, resetSession, setQuestions, clearAnswers, forceRegenerate } =
     useSession()
+  const { addEntry, settings } = useHistory()
+  const { toast } = useToast()
   const [showRetakeDialog, setShowRetakeDialog] = useState(false)
+  const [hasSaved, setHasSaved] = useState(false)
+  const [hasShownHistoryNotice, setHasShownHistoryNotice] = useState(false)
 
   const results = calculateScore(state.questions, state.answers)
+
+  // Save to history on first render
+  useEffect(() => {
+    if (state.questions.length > 0 && state.answers.length > 0 && !hasSaved) {
+      const entry: HistoryEntry = {
+        id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        source: {
+          type: state.source || 'text',
+          size: state.text.trim().split(/\s+/).length,
+        },
+        reading: {
+          estimatedSec: Math.floor(state.readingTimeMs / 1000),
+          actualSec: Math.floor((state.readingTimeMs - state.timeRemainingMs) / 1000),
+          earlyStop: state.timerState !== 'finished',
+        },
+        quiz: {
+          questionCount: state.questions.length,
+          difficulty: {
+            easy: state.questions.filter(q => q.difficulty === 'easy').length,
+            medium: state.questions.filter(q => q.difficulty === 'medium').length,
+            hard: state.questions.filter(q => q.difficulty === 'hard').length,
+          },
+          answers: state.questions.map(q => {
+            const userAnswer = state.answers.find(a => a.questionId === q.id)
+            const isCorrect = userAnswer?.answer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()
+            const difficultyPoints = { easy: 1, medium: 2, hard: 3 }
+            
+            return {
+              questionId: q.id,
+              type: q.type,
+              question: q.question,
+              userAnswer: userAnswer?.answer || '',
+              correctAnswer: q.correctAnswer,
+              correct: isCorrect,
+              difficulty: q.difficulty,
+              points: difficultyPoints[q.difficulty],
+            }
+          }),
+          score: results.score,
+          totalPoints: results.totalPoints,
+          percentage: results.percentage,
+        },
+      }
+
+      addEntry(entry)
+      setHasSaved(true)
+      
+      // Show toast if history was saved
+      if (settings.enabled && !hasShownHistoryNotice) {
+        toast({
+          title: 'Session saved to history',
+          description: 'View your progress in the History page',
+        })
+        setHasShownHistoryNotice(true)
+      }
+    }
+  }, [state, results, hasSaved, hasShownHistoryNotice, settings.enabled, addEntry, toast, router])
 
   const getScoreColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-400'
