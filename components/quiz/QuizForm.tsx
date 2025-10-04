@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Home, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,6 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Input } from '@/components/ui/input'
@@ -22,10 +30,12 @@ import QuizSkeleton from './QuizSkeleton'
 
 export default function QuizForm() {
   const router = useRouter()
-  const { state, setQuestions, setAnswer } = useSession()
+  const { state, setQuestions, setAnswer, clearSessionData, clearAnswers } = useSession()
   const { toast } = useToast()
   const [isGenerating, setIsGenerating] = useState(false)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [showClearAnswersDialog, setShowClearAnswersDialog] = useState(false)
 
   const handleGenerateQuestions = useCallback(async () => {
     const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || state.apiKey
@@ -107,6 +117,26 @@ export default function QuizForm() {
     router.push('/results')
   }
 
+  const handleStartOver = () => {
+    clearSessionData()
+    setShowResetDialog(false)
+    toast({
+      title: 'Starting over',
+      description: 'Cleared all study material and quiz data. Returning to home page.',
+    })
+    router.push('/')
+  }
+
+  const handleClearAnswers = () => {
+    clearAnswers()
+    setAnswers({})
+    setShowClearAnswersDialog(false)
+    toast({
+      title: 'Answers cleared',
+      description: 'All quiz responses have been cleared. Questions remain intact.',
+    })
+  }
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
@@ -147,13 +177,38 @@ export default function QuizForm() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5" />
-            Quiz Time
-          </CardTitle>
-          <CardDescription>
-            Answer all {state.questions.length} questions to complete the quiz
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Quiz Time
+              </CardTitle>
+              <CardDescription>
+                Answer all {state.questions.length} questions to complete the quiz
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowClearAnswersDialog(true)}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={Object.keys(answers).length === 0}
+              >
+                <Trash2 className="h-4 w-4" />
+                Clear Answers
+              </Button>
+              <Button
+                onClick={() => setShowResetDialog(true)}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Home className="h-4 w-4" />
+                Start Over
+              </Button>
+            </div>
+          </div>
         </CardHeader>
       </Card>
 
@@ -242,6 +297,70 @@ export default function QuizForm() {
           Submit Quiz
         </Button>
       </div>
+
+      {/* Start Over Confirmation Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Home className="h-5 w-5" />
+              Start Over?
+            </DialogTitle>
+            <DialogDescription>
+              This will clear your current study material and quiz. You&apos;ll return to the home page to start fresh.
+              <div className="mt-2 p-2 bg-muted rounded text-sm">
+                You have answered {Object.keys(answers).length} of {state.questions.length} questions.
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowResetDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleStartOver}
+            >
+              Start Over
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Answers Confirmation Dialog */}
+      <Dialog open={showClearAnswersDialog} onOpenChange={setShowClearAnswersDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Clear Quiz Answers?
+            </DialogTitle>
+            <DialogDescription>
+              This will clear all your quiz responses but keep the questions intact. You can answer them again.
+              <div className="mt-2 p-2 bg-muted rounded text-sm">
+                You have answered {Object.keys(answers).length} of {state.questions.length} questions.
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearAnswersDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearAnswers}
+            >
+              Clear Answers
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

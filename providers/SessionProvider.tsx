@@ -63,6 +63,25 @@ function sessionReducer(
         ...initialState,
         apiKey: state.apiKey, // Keep API key on reset
       }
+    case 'CLEAR_SESSION_DATA':
+      return {
+        ...state,
+        source: null,
+        text: '',
+        readingTimeMs: 0,
+        questions: [],
+        answers: [],
+        forceRegenerate: false,
+        // Preserve: apiKey, timerState, timeRemainingMs
+      }
+    case 'CLEAR_INPUT_DATA':
+      return {
+        ...state,
+        source: null,
+        text: '',
+        readingTimeMs: 0,
+        // Preserve: apiKey, questions, answers, timerState, timeRemainingMs
+      }
     case 'HYDRATE_FROM_STORAGE':
       return { ...state, ...action.payload }
     default:
@@ -83,6 +102,8 @@ interface SessionContextType {
   setTimerState: (state: 'idle' | 'running' | 'paused' | 'finished') => void
   setTimeRemaining: (ms: number) => void
   resetSession: () => void
+  clearSessionData: () => void
+  clearInputData: () => void
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined)
@@ -148,6 +169,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setTimeRemaining: (ms: number) =>
       dispatch({ type: 'SET_TIME_REMAINING', payload: ms }),
     resetSession: () => dispatch({ type: 'RESET_SESSION' }),
+    clearSessionData: () => dispatch({ type: 'CLEAR_SESSION_DATA' }),
+    clearInputData: () => dispatch({ type: 'CLEAR_INPUT_DATA' }),
   }
 
   return (

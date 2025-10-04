@@ -50,4 +50,6 @@ export type SessionAction =
     }
   | { type: 'SET_TIME_REMAINING'; payload: number }
   | { type: 'RESET_SESSION' }
+  | { type: 'CLEAR_SESSION_DATA' }
+  | { type: 'CLEAR_INPUT_DATA' }
   | { type: 'HYDRATE_FROM_STORAGE'; payload: Partial<SessionState> }

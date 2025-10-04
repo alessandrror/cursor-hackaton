@@ -54,7 +54,7 @@ Text: ${text.substring(0, 4000)}`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini',
+        model: 'gpt-3.5-turbo',
         messages,
         temperature: 1,
         max_completion_tokens: 2000,
