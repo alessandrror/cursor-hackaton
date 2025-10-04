@@ -8,6 +8,7 @@ Create a Next.js 15 app for a study timer and quiz application with the followin
 - shadcn/ui components
 - PDF.js (pdfjs-dist) for PDF parsing
 - OpenAI API for question generation
+- next-intl (i18n) setup only
 
 ## Setup Instructions
 
@@ -15,6 +16,10 @@ Create a Next.js 15 app for a study timer and quiz application with the followin
 2. Install shadcn/ui and add the following components: button, input, textarea, label, card, badge
 3. Install dependencies: npm install lucide-react pdfjs-dist
 4. Configure PDF.js worker in lib/pdf.ts (no CDN needed)
+5. Install localization library: `npm install next-intl`
+6. Create messages directory with a placeholder: `messages/en.json` containing `{}`
+7. Add an `i18n.ts` placeholder exporting `defaultLocale: 'en'` and `locales: ['en']`
+8. Defer provider wiring and string translations to the Roadmap instructions below
 
 ## Application Features
 
@@ -117,3 +122,11 @@ These are planned additions. Current app behavior remains as documented above un
   - Context menu action: "Practice selected text" to send selected text to the app, pre-filling the input.
   - Popup quick-quiz with question count scaled to selection length (min 3, max 10).
   - "Open App to Upload PDF" action; PDF uploads continue in the web app (not in the extension).
+
+- Localization (i18n) implementation
+  - Add supported locales: start with `en` (default), then add others (e.g., `es`).
+  - Create message files per locale: `messages/en.json`, `messages/es.json`.
+  - Wrap UI with `next-intl` provider in `app/layout.tsx` (client boundary in a child component as needed).
+  - Replace hardcoded strings with translation calls (e.g., `useTranslations`).
+  - Add a language selector using shadcn/ui (e.g., `Select`) and persist preference in a cookie (e.g., `NEXT_LOCALE`).
+  - Optional: introduce a `/[locale]` route segment and middleware to handle default-locale routing and detection from the browser.
