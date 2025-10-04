@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,8 +46,11 @@ export default function Timer({
           const newTime = prev - 1000
 
           if (newTime <= 0) {
-            onTimeUp()
-            onStateChange('finished')
+            // Use setTimeout to defer the state updates to the next tick
+            setTimeout(() => {
+              onTimeUp()
+              onStateChange('finished')
+            }, 0)
             return 0
           }
 

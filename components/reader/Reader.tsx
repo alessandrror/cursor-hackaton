@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clock, BookOpen, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,20 +31,24 @@ export default function Reader() {
   const { isMuted, toggleMute, playRingtone, stopRingtone } = useRingtone()
   const [showTimeUpModal, setShowTimeUpModal] = useState(false)
 
-  const handleTimeUp = () => {
+  const handleTimeUp = useCallback(() => {
     setShowTimeUpModal(true)
     playRingtone()
-  }
+  }, [playRingtone])
 
-  const handleTimeChange = (timeMs: number) => {
-    setTimeRemaining(timeMs)
-  }
+  const handleTimeChange = useCallback(
+    (timeMs: number) => {
+      setTimeRemaining(timeMs)
+    },
+    [setTimeRemaining]
+  )
 
-  const handleStateChange = (
-    newState: 'idle' | 'running' | 'paused' | 'finished'
-  ) => {
-    setTimerState(newState)
-  }
+  const handleStateChange = useCallback(
+    (newState: 'idle' | 'running' | 'paused' | 'finished') => {
+      setTimerState(newState)
+    },
+    [setTimerState]
+  )
 
   const handleContinueReading = () => {
     setShowTimeUpModal(false)
