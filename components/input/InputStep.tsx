@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, BookOpen, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -35,14 +35,20 @@ export default function InputStep() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isProcessing, setIsProcessing] = useState(false)
-  const [text, setTextState] = useState(state.text || '')
+  const [text, setTextState] = useState('')
   const [showClearDialog, setShowClearDialog] = useState(false)
   const [showClearInputDialog, setShowClearInputDialog] = useState(false)
-  const apiKey = process.env.OPENAI_API_KEY || ''
 
   const wordCount = countWords(text)
   const readingTimeMinutes = calculateReadingTime(wordCount)
   const readingTimeMs = readingTimeMinutes * 60 * 1000
+
+  // Sync text state with session state
+  useEffect(() => {
+    if (state.text && state.text !== text) {
+      setTextState(state.text)
+    }
+  }, [state.text, text])
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -86,16 +92,6 @@ export default function InputStep() {
   }
 
   const handleSubmit = () => {
-    if (!apiKey.trim()) {
-      toast({
-        title: 'API key missing',
-        description:
-          'Please set OPENAI_API_KEY in your environment variables.',
-        variant: 'destructive',
-      })
-      return
-    }
-
     if (!text.trim()) {
       toast({
         title: 'Content required',
@@ -105,7 +101,6 @@ export default function InputStep() {
       return
     }
 
-    setApiKey(apiKey)
     setText(text)
     setReadingTime(readingTimeMs)
     router.push('/read')
@@ -137,7 +132,7 @@ export default function InputStep() {
     })
   }
 
-  const canSubmit = apiKey.trim() && text.trim() && !isProcessing
+  const canSubmit = text.trim() && !isProcessing
   const hasContent = text.trim() || state.questions.length > 0
 
   return (
@@ -171,6 +166,9 @@ export default function InputStep() {
               type="file"
               accept=".pdf"
               onChange={handleFileUpload}
+              aria-label="Upload PDF"
+              title="Choose PDF File"
+              placeholder="Choose PDF File"
               className="hidden"
             />
           </div>

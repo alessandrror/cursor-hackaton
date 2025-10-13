@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useSession } from '@/providers/SessionProvider'
-import { calculateScore, analyzeOpenEndedAnswer } from '@/lib/openai'
+import { calculateScore } from '@/lib/openai'
 import { useHistory } from '@/hooks/useHistory'
 import { HistoryEntry } from '@/types/history'
 import { useToast } from '@/hooks/use-toast'
@@ -125,8 +125,6 @@ export default function ResultsView() {
       if (openEndedQuestions.length === 0) return
 
       setIsAnalyzing(true)
-      const apiKey = process.env.OPENAI_API_KEY || state.apiKey
-
       const analyses = await Promise.all(
         openEndedQuestions.map(async (question) => {
           const userAnswer = state.answers.find(
@@ -144,12 +142,23 @@ export default function ResultsView() {
           }
 
           try {
-            const analysis = await analyzeOpenEndedAnswer(
-              question.question,
-              userAnswer.answer,
-              question.correctAnswer,
-              apiKey
-            )
+            const response = await fetch('/api/analyze-answer', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                question: question.question,
+                userAnswer: userAnswer.answer,
+                correctAnswer: question.correctAnswer,
+              }),
+            })
+
+            if (!response.ok) {
+              throw new Error('Failed to analyze answer')
+            }
+
+            const analysis = await response.json()
             return {
               questionId: question.id,
               ...analysis,

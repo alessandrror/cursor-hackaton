@@ -24,7 +24,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSession } from '@/providers/SessionProvider'
-import { generateQuestions } from '@/lib/openai'
 import { useToast } from '@/hooks/use-toast'
 import QuizSkeleton from './QuizSkeleton'
 
@@ -38,13 +37,10 @@ export default function QuizForm() {
   const [showClearAnswersDialog, setShowClearAnswersDialog] = useState(false)
 
   const handleGenerateQuestions = useCallback(async () => {
-    const apiKey = process.env.OPENAI_API_KEY || state.apiKey
-
-    if (!state.text || !apiKey) {
+    if (!state.text) {
       toast({
         title: 'Missing information',
-        description:
-          'Please go back and provide text. API key should be set in environment variables.',
+        description: 'Please go back and provide text to study.',
         variant: 'destructive',
       })
       return
@@ -52,7 +48,20 @@ export default function QuizForm() {
 
     setIsGenerating(true)
     try {
-      const questions = await generateQuestions(state.text, apiKey)
+      const response = await fetch('/api/generate-questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: state.text }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to generate questions')
+      }
+
+      const { questions } = await response.json()
       setQuestions(questions)
       toast({
         title: 'Questions generated!',
@@ -68,7 +77,7 @@ export default function QuizForm() {
     } finally {
       setIsGenerating(false)
     }
-  }, [state.text, state.apiKey, setQuestions, toast])
+  }, [state.text, setQuestions, toast])
 
   // Load existing answers from session
   useEffect(() => {
@@ -79,21 +88,16 @@ export default function QuizForm() {
     setAnswers(existingAnswers)
   }, [state.answers])
 
-  // Generate questions if not already generated or if force regenerate is set
+
+  // Generate questions when component loads if no questions exist, or when force regenerate is set
   useEffect(() => {
-    const apiKey = process.env.OPENAI_API_KEY || state.apiKey
-    if (
-      (state.questions.length === 0 || state.forceRegenerate) &&
-      state.text &&
-      apiKey
-    ) {
+    if (state.text && (state.questions.length === 0 || state.forceRegenerate)) {
       handleGenerateQuestions()
     }
   }, [
+    state.text,
     state.questions.length,
     state.forceRegenerate,
-    state.text,
-    state.apiKey,
     handleGenerateQuestions,
   ])
 
@@ -251,31 +255,39 @@ export default function QuizForm() {
               </RadioGroup>
             )}
 
-            {question.type === 'true-false' && question.options && (
-              <RadioGroup
-                value={answers[question.id] || ''}
-                onValueChange={(value) =>
-                  handleAnswerChange(question.id, value)
-                }
-              >
-                {question.options.map((option, optionIndex) => (
-                  <div
-                    key={optionIndex}
-                    className="flex items-center space-x-2"
+            {question.type === 'true-false' && (
+              <div>
+                {question.options && question.options.length > 0 ? (
+                  <RadioGroup
+                    value={answers[question.id] || ''}
+                    onValueChange={(value) =>
+                      handleAnswerChange(question.id, value)
+                    }
                   >
-                    <RadioGroupItem
-                      value={option}
-                      id={`${question.id}-${optionIndex}`}
-                    />
-                    <Label
-                      htmlFor={`${question.id}-${optionIndex}`}
-                      className="cursor-pointer"
-                    >
-                      {option}
-                    </Label>
+                    {question.options.map((option, optionIndex) => (
+                      <div
+                        key={optionIndex}
+                        className="flex items-center space-x-2"
+                      >
+                        <RadioGroupItem
+                          value={option}
+                          id={`${question.id}-${optionIndex}`}
+                        />
+                        <Label
+                          htmlFor={`${question.id}-${optionIndex}`}
+                          className="cursor-pointer"
+                        >
+                          {option}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : (
+                  <div className="text-red-500 text-sm">
+                    Error: True/False question missing options
                   </div>
-                ))}
-              </RadioGroup>
+                )}
+              </div>
             )}
 
             {question.type === 'short-answer' && (
@@ -308,10 +320,10 @@ export default function QuizForm() {
             </DialogTitle>
             <DialogDescription>
               This will clear your current study material and quiz. You&apos;ll return to the home page to start fresh.
-              <div className="mt-2 p-2 bg-muted rounded text-sm">
-                You have answered {Object.keys(answers).length} of {state.questions.length} questions.
-              </div>
             </DialogDescription>
+            <div className="mt-2 p-2 bg-muted rounded text-sm">
+              You have answered {Object.keys(answers).length} of {state.questions.length} questions.
+            </div>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
@@ -340,10 +352,10 @@ export default function QuizForm() {
             </DialogTitle>
             <DialogDescription>
               This will clear all your quiz responses but keep the questions intact. You can answer them again.
-              <div className="mt-2 p-2 bg-muted rounded text-sm">
-                You have answered {Object.keys(answers).length} of {state.questions.length} questions.
-              </div>
             </DialogDescription>
+            <div className="mt-2 p-2 bg-muted rounded text-sm">
+              You have answered {Object.keys(answers).length} of {state.questions.length} questions.
+            </div>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
