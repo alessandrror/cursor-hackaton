@@ -38,7 +38,7 @@ export default function InputStep() {
   const [text, setTextState] = useState(state.text || '')
   const [showClearDialog, setShowClearDialog] = useState(false)
   const [showClearInputDialog, setShowClearInputDialog] = useState(false)
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
+  const apiKey = process.env.OPENAI_API_KEY || ''
 
   const wordCount = countWords(text)
   const readingTimeMinutes = calculateReadingTime(wordCount)
@@ -90,7 +90,7 @@ export default function InputStep() {
       toast({
         title: 'API key missing',
         description:
-          'Please set NEXT_PUBLIC_OPENAI_API_KEY in your environment variables.',
+          'Please set OPENAI_API_KEY in your environment variables.',
         variant: 'destructive',
       })
       return

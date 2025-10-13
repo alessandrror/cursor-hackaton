@@ -125,7 +125,7 @@ export default function ResultsView() {
       if (openEndedQuestions.length === 0) return
 
       setIsAnalyzing(true)
-      const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || state.apiKey
+      const apiKey = process.env.OPENAI_API_KEY || state.apiKey
 
       const analyses = await Promise.all(
         openEndedQuestions.map(async (question) => {

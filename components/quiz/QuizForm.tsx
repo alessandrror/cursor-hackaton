@@ -38,7 +38,7 @@ export default function QuizForm() {
   const [showClearAnswersDialog, setShowClearAnswersDialog] = useState(false)
 
   const handleGenerateQuestions = useCallback(async () => {
-    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || state.apiKey
+    const apiKey = process.env.OPENAI_API_KEY || state.apiKey
 
     if (!state.text || !apiKey) {
       toast({
@@ -81,7 +81,7 @@ export default function QuizForm() {
 
   // Generate questions if not already generated or if force regenerate is set
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || state.apiKey
+    const apiKey = process.env.OPENAI_API_KEY || state.apiKey
     if (
       (state.questions.length === 0 || state.forceRegenerate) &&
       state.text &&
