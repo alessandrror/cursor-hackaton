@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { detectLanguage, getLanguageName } from '@/lib/language'
 
 interface OpenAIResponse {
   choices: Array<{
@@ -19,6 +20,16 @@ async function analyzeOpenEndedAnswer(
   isCorrect: boolean
 }> {
   try {
+    // Detect the language of the input content
+    const combinedText = `${question} ${userAnswer} ${correctAnswer}`
+    const detectedLanguage = detectLanguage(combinedText)
+    const languageName = getLanguageName(detectedLanguage)
+    
+    // Create language-specific instructions
+    const languageInstruction = detectedLanguage === 'en' 
+      ? '' 
+      : `\n\nIMPORTANT: Provide all feedback and analysis in ${languageName}. The question and answers are in ${languageName}, so respond entirely in ${languageName}.`
+
     const prompt = `Analyze this open-ended question and answer. Rate the user's answer on a scale of 0-1 (where 1 is perfect) and provide constructive feedback.
 
 Question: ${question}
@@ -31,7 +42,7 @@ Respond with a JSON object containing:
 - feedback: string with specific feedback on what they got right/wrong
 - isCorrect: boolean (true if score >= 0.7)
 
-Be generous but fair. Consider partial credit for related concepts, even if not perfectly worded.`
+Be generous but fair. Consider partial credit for related concepts, even if not perfectly worded.${languageInstruction}`
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
@@ -50,7 +61,9 @@ Be generous but fair. Consider partial credit for related concepts, even if not 
           {
             role: 'system',
             content:
-              'You are an educational assessment AI. Analyze student answers fairly and provide helpful feedback. Always respond with valid JSON only.',
+              detectedLanguage === 'en'
+                ? 'You are an educational assessment AI. Analyze student answers fairly and provide helpful feedback. Always respond with valid JSON only.'
+                : `You are an educational assessment AI that provides feedback in ${languageName}. Analyze student answers fairly and provide helpful feedback. Always respond with valid JSON only, and ensure all feedback text is in ${languageName}.`,
           },
           {
             role: 'user',
@@ -87,15 +100,28 @@ Be generous but fair. Consider partial credit for related concepts, even if not 
     }
   } catch (error) {
     console.error('Error analyzing open-ended answer:', error)
-    // Fallback to simple string comparison
+    // Fallback to simple string comparison with language-appropriate messages
     const isCorrect =
       userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim()
+    
+    const feedback = isCorrect
+      ? (detectedLanguage === 'es' ? '¡Correcto!' 
+         : detectedLanguage === 'fr' ? 'Correct !'
+         : detectedLanguage === 'de' ? 'Richtig!'
+         : detectedLanguage === 'it' ? 'Corretto!'
+         : detectedLanguage === 'pt' ? 'Correto!'
+         : 'Correct!')
+      : (detectedLanguage === 'es' ? 'Incorrecto. Considera revisar el material.'
+         : detectedLanguage === 'fr' ? 'Incorrect. Considérez réviser le matériel.'
+         : detectedLanguage === 'de' ? 'Falsch. Betrachten Sie das Material zu überprüfen.'
+         : detectedLanguage === 'it' ? 'Sbagliato. Considera di rivedere il materiale.'
+         : detectedLanguage === 'pt' ? 'Incorreto. Considere revisar o material.'
+         : 'Incorrect. Consider reviewing the material.')
+         
     return {
       score: isCorrect ? 1 : 0,
       maxScore: 1,
-      feedback: isCorrect
-        ? 'Correct!'
-        : 'Incorrect. Consider reviewing the material.',
+      feedback,
       isCorrect,
     }
   }

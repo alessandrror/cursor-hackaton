@@ -32,7 +32,14 @@ function sessionReducer(
     case 'SET_SOURCE':
       return { ...state, source: action.payload }
     case 'SET_TEXT':
-      return { ...state, text: action.payload }
+      // Clear questions and answers when text changes to ensure fresh quiz generation
+      return { 
+        ...state, 
+        text: action.payload,
+        questions: [],
+        answers: [],
+        forceRegenerate: false
+      }
     case 'SET_READING_TIME':
       return { ...state, readingTimeMs: action.payload }
     case 'SET_QUESTIONS':

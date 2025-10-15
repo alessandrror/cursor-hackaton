@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Question } from '@/types/session'
+import { detectLanguage, getLanguageName } from '@/lib/language'
 
 interface OpenAIMessage {
   role: 'system' | 'user'
@@ -17,6 +18,15 @@ interface OpenAIResponse {
 async function generateQuestions(text: string): Promise<Question[]> {
   const wordCount = text.trim().split(/\s+/).length
   const questionCount = Math.min(Math.max(Math.floor(wordCount / 100), 5), 20)
+  
+  // Detect the language of the input text
+  const detectedLanguage = detectLanguage(text)
+  const languageName = getLanguageName(detectedLanguage)
+  
+  // Create language-specific instructions
+  const languageInstruction = detectedLanguage === 'en' 
+    ? '' 
+    : `\n\nIMPORTANT: Generate all questions, options, and answers in ${languageName}. The user's text is in ${languageName}, so respond entirely in ${languageName}.`
 
   const prompt = `Generate ${questionCount} quiz questions based on the following text. Return a JSON array where each question has:
 - id: unique string identifier
@@ -26,7 +36,7 @@ async function generateQuestions(text: string): Promise<Question[]> {
 - correctAnswer: the correct answer
 - difficulty: "easy", "medium", or "hard"
 
-Mix question types and difficulties. For multiple-choice, make options plausible but only one correct. For true-false, make statements that are clearly true or false. For short-answer, expect concise answers.
+Mix question types and difficulties. For multiple-choice, make options plausible but only one correct. For true-false, make statements that are clearly true or false. For short-answer, expect concise answers.${languageInstruction}
 
 Text: ${text.substring(0, 4000)}`
 
@@ -90,14 +100,86 @@ Text: ${text.substring(0, 4000)}`
     }
 
     // Add IDs if missing and validate structure
-    const validatedQuestions = questions.map((q, index) => ({
-      id: q.id || `q${index + 1}`,
-      type: q.type,
-      question: q.question,
-      options: q.options,
-      correctAnswer: q.correctAnswer,
-      difficulty: q.difficulty,
-    }))
+    const validatedQuestions = questions.map((q, index) => {
+      const question = {
+        id: q.id || `q${index + 1}`,
+        type: q.type,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        difficulty: q.difficulty,
+      }
+
+      // Ensure true-false questions have proper options and correct answer
+      if (question.type === 'true-false') {
+        if (!question.options || question.options.length === 0) {
+          // Use language-appropriate true/false options
+          question.options = detectedLanguage === 'es' 
+            ? ['Verdadero', 'Falso']
+            : detectedLanguage === 'fr'
+            ? ['Vrai', 'Faux']
+            : detectedLanguage === 'de'
+            ? ['Wahr', 'Falsch']
+            : detectedLanguage === 'it'
+            ? ['Vero', 'Falso']
+            : detectedLanguage === 'pt'
+            ? ['Verdadeiro', 'Falso']
+            : ['True', 'False']
+        }
+        
+        // Ensure correctAnswer matches the language
+        const trueOptions = ['True', 'Verdadero', 'Vrai', 'Wahr', 'Vero', 'Verdadeiro']
+        const falseOptions = ['False', 'Falso', 'Faux', 'Falsch', 'Falso', 'Falso']
+        
+        if (question.correctAnswer && !trueOptions.includes(question.correctAnswer) && !falseOptions.includes(question.correctAnswer)) {
+          // Try to normalize the answer
+          const normalizedAnswer = question.correctAnswer.toLowerCase().trim()
+          const isTrue = ['true', 'verdadero', 'vrai', 'wahr', 'vero', 'verdadeiro'].includes(normalizedAnswer)
+          const isFalse = ['false', 'falso', 'faux', 'falsch'].includes(normalizedAnswer)
+          
+          if (isTrue) {
+            question.correctAnswer = detectedLanguage === 'es' 
+              ? 'Verdadero'
+              : detectedLanguage === 'fr'
+              ? 'Vrai'
+              : detectedLanguage === 'de'
+              ? 'Wahr'
+              : detectedLanguage === 'it'
+              ? 'Vero'
+              : detectedLanguage === 'pt'
+              ? 'Verdadeiro'
+              : 'True'
+          } else if (isFalse) {
+            question.correctAnswer = detectedLanguage === 'es' 
+              ? 'Falso'
+              : detectedLanguage === 'fr'
+              ? 'Faux'
+              : detectedLanguage === 'de'
+              ? 'Falsch'
+              : detectedLanguage === 'it'
+              ? 'Falso'
+              : detectedLanguage === 'pt'
+              ? 'Falso'
+              : 'False'
+          } else {
+            // Default to "True" equivalent if we can't determine
+            question.correctAnswer = detectedLanguage === 'es' 
+              ? 'Verdadero'
+              : detectedLanguage === 'fr'
+              ? 'Vrai'
+              : detectedLanguage === 'de'
+              ? 'Wahr'
+              : detectedLanguage === 'it'
+              ? 'Vero'
+              : detectedLanguage === 'pt'
+              ? 'Verdadeiro'
+              : 'True'
+          }
+        }
+      }
+
+      return question
+    })
 
     return validatedQuestions
   } catch (error) {

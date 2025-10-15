@@ -101,6 +101,11 @@ export default function InputStep() {
       return
     }
 
+    // Check if text has changed and clear old quiz data if needed
+    if (state.text !== text) {
+      clearSessionData()
+    }
+
     setText(text)
     setReadingTime(readingTimeMs)
     router.push('/read')

@@ -33,6 +33,37 @@ import { useHistory } from '@/hooks/useHistory'
 import { HistoryEntry } from '@/types/history'
 import { useToast } from '@/hooks/use-toast'
 
+// Normalize true/false answers across languages
+function normalizeTrueFalseAnswer(answer: string): 'true' | 'false' | null {
+  const normalized = answer.toLowerCase().trim()
+  
+  // English
+  if (normalized === 'true') return 'true'
+  if (normalized === 'false') return 'false'
+  
+  // Spanish
+  if (normalized === 'verdadero') return 'true'
+  if (normalized === 'falso') return 'false'
+  
+  // French
+  if (normalized === 'vrai') return 'true'
+  if (normalized === 'faux') return 'false'
+  
+  // German
+  if (normalized === 'wahr') return 'true'
+  if (normalized === 'falsch') return 'false'
+  
+  // Italian
+  if (normalized === 'vero') return 'true'
+  if (normalized === 'falso') return 'false'
+  
+  // Portuguese
+  if (normalized === 'verdadeiro') return 'true'
+  if (normalized === 'falso') return 'false'
+  
+  return null
+}
+
 interface QuestionAnalysis {
   questionId: string
   score: number
@@ -82,7 +113,24 @@ export default function ResultsView() {
           },
           answers: state.questions.map(q => {
             const userAnswer = state.answers.find(a => a.questionId === q.id)
-            const isCorrect = userAnswer?.answer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()
+            let isCorrect = false
+            
+            if (q.type === 'true-false') {
+              // For true/false questions, normalize both answers to handle language equivalents
+              const userNormalized = normalizeTrueFalseAnswer(userAnswer?.answer || '')
+              const correctNormalized = normalizeTrueFalseAnswer(q.correctAnswer)
+              
+              if (userNormalized && correctNormalized) {
+                isCorrect = userNormalized === correctNormalized
+              } else {
+                // Fallback to exact match if normalization fails
+                isCorrect = userAnswer?.answer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()
+              }
+            } else {
+              // For other question types, use exact match
+              isCorrect = userAnswer?.answer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()
+            }
+            
             const difficultyPoints = { easy: 1, medium: 2, hard: 3 }
             
             return {
@@ -302,11 +350,25 @@ export default function ResultsView() {
               )
 
               // Use AI analysis for short-answer questions, basic comparison for others
-              const isCorrect =
-                question.type === 'short-answer' && analysis?.isAnalyzed
-                  ? analysis.isCorrect
-                  : userAnswer?.answer.toLowerCase().trim() ===
-                    question.correctAnswer.toLowerCase().trim()
+              let isCorrect = false
+              
+              if (question.type === 'short-answer' && analysis?.isAnalyzed) {
+                isCorrect = analysis.isCorrect
+              } else if (question.type === 'true-false') {
+                // For true/false questions, normalize both answers to handle language equivalents
+                const userNormalized = normalizeTrueFalseAnswer(userAnswer?.answer || '')
+                const correctNormalized = normalizeTrueFalseAnswer(question.correctAnswer)
+                
+                if (userNormalized && correctNormalized) {
+                  isCorrect = userNormalized === correctNormalized
+                } else {
+                  // Fallback to exact match if normalization fails
+                  isCorrect = userAnswer?.answer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
+                }
+              } else {
+                // For multiple choice and other types, use exact match
+                isCorrect = userAnswer?.answer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
+              }
 
               const score =
                 question.type === 'short-answer' && analysis?.isAnalyzed

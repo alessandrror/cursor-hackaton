@@ -205,6 +205,37 @@ Be generous but fair. Consider partial credit for related concepts, even if not 
   }
 }
 
+// Normalize true/false answers across languages
+function normalizeTrueFalseAnswer(answer: string): 'true' | 'false' | null {
+  const normalized = answer.toLowerCase().trim()
+  
+  // English
+  if (normalized === 'true') return 'true'
+  if (normalized === 'false') return 'false'
+  
+  // Spanish
+  if (normalized === 'verdadero') return 'true'
+  if (normalized === 'falso') return 'false'
+  
+  // French
+  if (normalized === 'vrai') return 'true'
+  if (normalized === 'faux') return 'false'
+  
+  // German
+  if (normalized === 'wahr') return 'true'
+  if (normalized === 'falsch') return 'false'
+  
+  // Italian
+  if (normalized === 'vero') return 'true'
+  if (normalized === 'falso') return 'false'
+  
+  // Portuguese
+  if (normalized === 'verdadeiro') return 'true'
+  if (normalized === 'falso') return 'false'
+  
+  return null
+}
+
 export function calculateScore(
   questions: Question[],
   answers: Array<{ questionId: string; answer: string }>
@@ -260,10 +291,25 @@ export function calculateScore(
           }
         }
       } else {
-        // For multiple choice and true/false, use exact match
-        const isCorrect =
-          userAnswer.answer.toLowerCase().trim() ===
-          question.correctAnswer.toLowerCase().trim()
+        // For multiple choice and true/false, use appropriate comparison
+        let isCorrect = false
+        
+        if (question.type === 'true-false') {
+          // For true/false questions, normalize both answers to handle language equivalents
+          const userNormalized = normalizeTrueFalseAnswer(userAnswer.answer)
+          const correctNormalized = normalizeTrueFalseAnswer(question.correctAnswer)
+          
+          if (userNormalized && correctNormalized) {
+            isCorrect = userNormalized === correctNormalized
+          } else {
+            // Fallback to exact match if normalization fails
+            isCorrect = userAnswer.answer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
+          }
+        } else {
+          // For multiple choice, use exact match
+          isCorrect = userAnswer.answer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
+        }
+        
         if (isCorrect) {
           score += points
           correctAnswers++
