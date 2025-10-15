@@ -19,11 +19,12 @@ async function analyzeOpenEndedAnswer(
   feedback: string
   isCorrect: boolean
 }> {
+  // Detect the language of the input content
+  const combinedText = `${question} ${userAnswer} ${correctAnswer}`
+  const detectedLanguage = detectLanguage(combinedText)
+  const languageName = getLanguageName(detectedLanguage)
+  
   try {
-    // Detect the language of the input content
-    const combinedText = `${question} ${userAnswer} ${correctAnswer}`
-    const detectedLanguage = detectLanguage(combinedText)
-    const languageName = getLanguageName(detectedLanguage)
     
     // Create language-specific instructions
     const languageInstruction = detectedLanguage === 'en' 
