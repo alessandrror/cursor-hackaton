@@ -63,13 +63,19 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
   return (
     <div className="space-y-6">
       {/* Current Range Display */}
-      {currentRange && (
+      {currentRange ? (
         <div className="p-3 bg-muted/50 rounded-lg">
           <div className="text-sm">
             <span className="font-medium">Current range:</span> {currentRange.min}-{currentRange.max} questions
             <span className="text-muted-foreground ml-2">
               (avg: {Math.round((currentRange.min + currentRange.max) / 2)}, {getEstimatedTime(Math.round((currentRange.min + currentRange.max) / 2))})
             </span>
+          </div>
+        </div>
+      ) : (
+        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <div className="text-sm text-blue-400">
+            <span className="font-medium">No range set yet.</span> Questions will be generated using the default range (10-20 questions).
           </div>
         </div>
       )}
@@ -240,7 +246,8 @@ export default function SettingsView() {
             Question Range Settings
           </CardTitle>
           <CardDescription>
-            Configure the range of questions generated for your quizzes (5-50 questions)
+            Configure the range of questions generated for your quizzes (5-50 questions). 
+            {!state.questionRange && ' You can set your preferred range here.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

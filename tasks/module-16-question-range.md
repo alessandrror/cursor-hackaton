@@ -60,38 +60,43 @@ Replace the single question count customization with a range-based approach. Use
 
 ## User Flow
 
-1. User provides study material and starts quiz
-2. System shows: "Configure your question range (5-50 questions)"
-3. User sets minimum (e.g., 10) and maximum (e.g., 30) questions
-4. System generates random number within range (e.g., 20 questions)
-5. User can adjust range in settings for future quizzes
+1. **First-time users**: Welcome dialog appears asking to set question preferences (5-50 questions)
+2. User sets minimum (e.g., 10) and maximum (e.g., 30) questions
+3. **Subsequent quizzes**: System automatically generates questions within the configured range
+4. **Range changes**: Users can modify preferences anytime in Settings page
+5. **Default behavior**: If no range is set, uses default range (10-20 questions)
 
 ## Success Criteria
 
-- ✅ Users can configure question range on first quiz start
+- ✅ **Simplified flow**: Ask for preferences only once on first use
+- ✅ **First-time setup**: Welcome dialog for new users
 - ✅ Questions are generated within the specified range
 - ✅ Range preferences are stored and persist across sessions
-- ✅ Range can be modified in settings
+- ✅ Range can be modified in settings only
 - ✅ Range validation prevents invalid configurations
 - ✅ Smooth integration with existing quiz flow
+- ✅ **Default behavior**: Uses 10-20 range if no preferences set
 
 ## Implementation Status: COMPLETED ✅
 
 All requirements have been successfully implemented:
 
 1. **Question Range State Management**: Added `questionRange` to SessionState with proper actions
-2. **QuestionRangeConfig Component**: Created with sliders, validation, and preview functionality
+2. **First-Time Setup Dialog**: Welcome dialog appears only once for new users to set preferences
 3. **Updated Question Generation API**: Now accepts range and generates random count within range
-4. **Quiz Form Integration**: Shows range config on first quiz start, loading state for generation
+4. **Simplified Quiz Flow**: Auto-generates questions using configured range or default (10-20)
 5. **Settings Page Integration**: Full range configuration in settings with current range display
 6. **Range Validation**: Prevents invalid ranges (min > max, out of bounds)
 7. **Time Estimation**: Shows estimated completion time for different question counts
+8. **SetupWrapper Component**: Manages first-time setup state using localStorage
+9. **Default Behavior**: Uses 10-20 range if no preferences are configured
 
-The feature is now fully functional and ready for use.
+The feature is now fully functional with a simplified, user-friendly flow.
 
 ## Edge Cases
 
-- User cancels range configuration → fall back to default range (5-15)
-- Invalid range (min > max) → show validation error
-- No range set → use default range (5-15)
-- Range modification in settings → apply to next quiz generation
+- **First-time setup skipped**: Uses default range (10-20) automatically
+- **Invalid range (min > max)**: Show validation error in setup or settings
+- **No range set**: Uses default range (10-20) for question generation
+- **Range modification in settings**: Applies to next quiz generation
+- **Setup completion tracking**: Uses localStorage to remember setup status

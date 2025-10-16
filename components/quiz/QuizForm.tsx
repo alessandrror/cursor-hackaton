@@ -26,7 +26,6 @@ import { Label } from '@/components/ui/label'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/hooks/use-toast'
 import QuizSkeleton from './QuizSkeleton'
-import QuestionRangeConfig from './QuestionRangeConfig'
 
 export default function QuizForm() {
   const router = useRouter()
@@ -93,23 +92,20 @@ export default function QuizForm() {
   }, [state.answers])
 
 
-  // Only auto-generate questions when forceRegenerate is explicitly set
-  // Otherwise, show the range configuration interface if no range is set
+  // Auto-generate questions when text is available and no questions exist
+  // Use default range (10-20) if no range is configured
   useEffect(() => {
-    if (state.text && state.questions.length === 0 && state.forceRegenerate) {
-      handleGenerateQuestions()
+    if (state.text && state.questions.length === 0) {
+      const defaultRange = state.questionRange || { min: 10, max: 20 }
+      handleGenerateQuestions(defaultRange)
     }
   }, [
     state.text,
     state.questions.length,
-    state.forceRegenerate,
     handleGenerateQuestions,
+    state.questionRange,
   ])
 
-  const handleConfigureRange = (range: { min: number; max: number }) => {
-    setQuestionRange(range)
-    handleGenerateQuestions(range)
-  }
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }))
@@ -172,22 +168,13 @@ export default function QuizForm() {
   }
 
   if (state.questions.length === 0) {
-    // Show range configuration if no range is set, otherwise show loading
-    if (!state.questionRange) {
-      return (
-        <QuestionRangeConfig
-          text={state.text}
-          onConfigure={handleConfigureRange}
-        />
-      )
-    }
-    
-    // If range is set but no questions exist, show loading
+    // Show loading while generating questions
+    const currentRange = state.questionRange || { min: 10, max: 20 }
     return (
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center gap-2 text-muted-foreground">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span>Generating questions within range {state.questionRange.min}-{state.questionRange.max}...</span>
+          <span>Generating questions within range {currentRange.min}-{currentRange.max}...</span>
         </div>
       </div>
     )

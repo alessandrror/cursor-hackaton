@@ -5,6 +5,7 @@ import { SessionProvider } from '@/providers/SessionProvider'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import { Toaster } from '@/components/ui/toaster'
 import Navigation from '@/components/Navigation'
+import SetupWrapper from '@/components/setup/SetupWrapper'
 import Link from 'next/link'
 import CerebryxLogo from '@/components/branding/CerebryxLogo'
 
@@ -37,10 +38,12 @@ export default function RootLayout({
           enableSystem={true}
         >
           <SessionProvider>
-            <div className="min-h-screen bg-background text-foreground">
-              <Navigation />
-              <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
-            </div>
+            <SetupWrapper>
+              <div className="min-h-screen bg-background text-foreground">
+                <Navigation />
+                <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
+              </div>
+            </SetupWrapper>
             <Toaster />
           </SessionProvider>
         </ThemeProvider>
