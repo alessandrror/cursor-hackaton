@@ -61,6 +61,11 @@ function sessionReducer(
         ...state,
         forceRegenerate: true,
       }
+    case 'SET_QUESTION_RANGE':
+      return {
+        ...state,
+        questionRange: action.payload,
+      }
     case 'SET_TIMER_STATE':
       return { ...state, timerState: action.payload }
     case 'SET_TIME_REMAINING':
@@ -106,6 +111,7 @@ interface SessionContextType {
   setAnswer: (answer: Answer) => void
   clearAnswers: () => void
   forceRegenerate: () => void
+  setQuestionRange: (range: { min: number; max: number }) => void
   setTimerState: (state: 'idle' | 'running' | 'paused' | 'finished') => void
   setTimeRemaining: (ms: number) => void
   resetSession: () => void
@@ -171,6 +177,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ANSWER', payload: answer }),
     clearAnswers: () => dispatch({ type: 'CLEAR_ANSWERS' }),
     forceRegenerate: () => dispatch({ type: 'FORCE_REGENERATE' }),
+    setQuestionRange: (range: { min: number; max: number }) =>
+      dispatch({ type: 'SET_QUESTION_RANGE', payload: range }),
     setTimerState: (timerState: 'idle' | 'running' | 'paused' | 'finished') =>
       dispatch({ type: 'SET_TIMER_STATE', payload: timerState }),
     setTimeRemaining: (ms: number) =>

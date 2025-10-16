@@ -15,9 +15,17 @@ interface OpenAIResponse {
   }>
 }
 
-async function generateQuestions(text: string): Promise<Question[]> {
+async function generateQuestions(text: string, questionRange?: { min: number; max: number }): Promise<Question[]> {
   const wordCount = text.trim().split(/\s+/).length
-  const questionCount = Math.min(Math.max(Math.floor(wordCount / 100), 5), 20)
+  
+  let questionCount: number
+  if (questionRange) {
+    // Generate random number within the specified range
+    questionCount = Math.floor(Math.random() * (questionRange.max - questionRange.min + 1)) + questionRange.min
+  } else {
+    // Fallback to automatic calculation
+    questionCount = Math.min(Math.max(Math.floor(wordCount / 100), 5), 20)
+  }
   
   // Detect the language of the input text
   const detectedLanguage = detectLanguage(text)
@@ -35,8 +43,9 @@ async function generateQuestions(text: string): Promise<Question[]> {
 - options: array of 4 options (for multiple-choice) or ["True", "False"] (for true-false), omit for short-answer
 - correctAnswer: the correct answer
 - difficulty: "easy", "medium", or "hard"
+- sourceQuote: the exact text excerpt from the source material that contains the information needed to answer this question (quote the relevant sentence or paragraph)
 
-Mix question types and difficulties. For multiple-choice, make options plausible but only one correct. For true-false, make statements that are clearly true or false. For short-answer, expect concise answers.${languageInstruction}
+Mix question types and difficulties. For multiple-choice, make options plausible but only one correct. For true-false, make statements that are clearly true or false. For short-answer, expect concise answers. Always include a sourceQuote that directly supports the correct answer.${languageInstruction}
 
 Text: ${text.substring(0, 4000)}`
 
@@ -108,6 +117,7 @@ Text: ${text.substring(0, 4000)}`
         options: q.options,
         correctAnswer: q.correctAnswer,
         difficulty: q.difficulty,
+        sourceQuote: q.sourceQuote,
       }
 
       // Ensure true-false questions have proper options and correct answer
@@ -201,7 +211,7 @@ Text: ${text.substring(0, 4000)}`
 
 export async function POST(request: NextRequest) {
   try {
-    const { text } = await request.json()
+    const { text, questionRange } = await request.json()
 
     if (!text || typeof text !== 'string' || !text.trim()) {
       return NextResponse.json(
@@ -210,7 +220,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const questions = await generateQuestions(text)
+    // Validate question range if provided
+    if (questionRange) {
+      if (typeof questionRange.min !== 'number' || typeof questionRange.max !== 'number') {
+        return NextResponse.json(
+          { error: 'Question range must have numeric min and max values' },
+          { status: 400 }
+        )
+      }
+      if (questionRange.min < 5 || questionRange.max > 50 || questionRange.min > questionRange.max) {
+        return NextResponse.json(
+          { error: 'Question range must be between 5-50 with min <= max' },
+          { status: 400 }
+        )
+      }
+    }
+
+    const questions = await generateQuestions(text, questionRange)
     
     return NextResponse.json({ questions })
   } catch (error) {

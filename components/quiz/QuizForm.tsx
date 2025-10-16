@@ -26,17 +26,18 @@ import { Label } from '@/components/ui/label'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/hooks/use-toast'
 import QuizSkeleton from './QuizSkeleton'
+import QuestionRangeConfig from './QuestionRangeConfig'
 
 export default function QuizForm() {
   const router = useRouter()
-  const { state, setQuestions, setAnswer, clearSessionData, clearAnswers } = useSession()
+  const { state, setQuestions, setAnswer, clearSessionData, clearAnswers, setQuestionRange } = useSession()
   const { toast } = useToast()
   const [isGenerating, setIsGenerating] = useState(false)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [showClearAnswersDialog, setShowClearAnswersDialog] = useState(false)
 
-  const handleGenerateQuestions = useCallback(async () => {
+  const handleGenerateQuestions = useCallback(async (questionRange?: { min: number; max: number }) => {
     if (!state.text) {
       toast({
         title: 'Missing information',
@@ -53,7 +54,10 @@ export default function QuizForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: state.text }),
+        body: JSON.stringify({ 
+          text: state.text,
+          questionRange: questionRange || state.questionRange
+        }),
       })
 
       if (!response.ok) {
@@ -77,7 +81,7 @@ export default function QuizForm() {
     } finally {
       setIsGenerating(false)
     }
-  }, [state.text, setQuestions, toast])
+  }, [state.text, state.questionRange, setQuestions, toast])
 
   // Load existing answers from session
   useEffect(() => {
@@ -89,9 +93,10 @@ export default function QuizForm() {
   }, [state.answers])
 
 
-  // Generate questions when component loads if no questions exist, or when force regenerate is set
+  // Only auto-generate questions when forceRegenerate is explicitly set
+  // Otherwise, show the range configuration interface if no range is set
   useEffect(() => {
-    if (state.text && (state.questions.length === 0 || state.forceRegenerate)) {
+    if (state.text && state.questions.length === 0 && state.forceRegenerate) {
       handleGenerateQuestions()
     }
   }, [
@@ -100,6 +105,11 @@ export default function QuizForm() {
     state.forceRegenerate,
     handleGenerateQuestions,
   ])
+
+  const handleConfigureRange = (range: { min: number; max: number }) => {
+    setQuestionRange(range)
+    handleGenerateQuestions(range)
+  }
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }))
@@ -162,18 +172,24 @@ export default function QuizForm() {
   }
 
   if (state.questions.length === 0) {
+    // Show range configuration if no range is set, otherwise show loading
+    if (!state.questionRange) {
+      return (
+        <QuestionRangeConfig
+          text={state.text}
+          onConfigure={handleConfigureRange}
+        />
+      )
+    }
+    
+    // If range is set but no questions exist, show loading
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>No questions available</CardTitle>
-          <CardDescription>
-            Failed to generate questions. Please try again.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={handleGenerateQuestions}>Generate Questions</Button>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <span>Generating questions within range {state.questionRange.min}-{state.questionRange.max}...</span>
+        </div>
+      </div>
     )
   }
 

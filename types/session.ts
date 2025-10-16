@@ -9,6 +9,7 @@ export interface Question {
   options?: string[] // for multiple-choice and true-false
   correctAnswer: string
   difficulty: Difficulty
+  sourceQuote?: string // relevant text excerpt that contains the answer
 }
 
 export interface Answer {
@@ -29,6 +30,7 @@ export interface SessionState {
   questions: Question[]
   answers: Answer[]
   forceRegenerate: boolean
+  questionRange?: { min: number; max: number }
 
   // Timer state (not persisted)
   timerState: 'idle' | 'running' | 'paused' | 'finished'
@@ -44,6 +46,7 @@ export type SessionAction =
   | { type: 'SET_ANSWER'; payload: Answer }
   | { type: 'CLEAR_ANSWERS' }
   | { type: 'FORCE_REGENERATE' }
+  | { type: 'SET_QUESTION_RANGE'; payload: { min: number; max: number } }
   | {
       type: 'SET_TIMER_STATE'
       payload: 'idle' | 'running' | 'paused' | 'finished'

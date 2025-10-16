@@ -199,6 +199,7 @@ export default function ResultsView() {
                 question: question.question,
                 userAnswer: userAnswer.answer,
                 correctAnswer: question.correctAnswer,
+                sourceQuote: question.sourceQuote,
               }),
             })
 
@@ -452,6 +453,17 @@ export default function ResultsView() {
                             </span>
                           </div>
                         )
+                      )}
+
+                      {question.sourceQuote && (
+                        <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                          <div className="font-medium text-sm text-blue-400 mb-1">
+                            From the text:
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            &ldquo;{question.sourceQuote}&rdquo;
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>

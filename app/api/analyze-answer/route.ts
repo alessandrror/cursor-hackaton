@@ -12,7 +12,8 @@ interface OpenAIResponse {
 async function analyzeOpenEndedAnswer(
   question: string,
   userAnswer: string,
-  correctAnswer: string
+  correctAnswer: string,
+  sourceQuote?: string
 ): Promise<{
   score: number
   maxScore: number
@@ -31,19 +32,23 @@ async function analyzeOpenEndedAnswer(
       ? '' 
       : `\n\nIMPORTANT: Provide all feedback and analysis in ${languageName}. The question and answers are in ${languageName}, so respond entirely in ${languageName}.`
 
+    const sourceQuoteText = sourceQuote 
+      ? `\n\nSource Material: "${sourceQuote}"` 
+      : ''
+
     const prompt = `Analyze this open-ended question and answer. Rate the user's answer on a scale of 0-1 (where 1 is perfect) and provide constructive feedback.
 
 Question: ${question}
 Correct Answer: ${correctAnswer}
-User Answer: ${userAnswer}
+User Answer: ${userAnswer}${sourceQuoteText}
 
 Respond with a JSON object containing:
 - score: number between 0 and 1 (e.g., 0.8 for 80% correct)
 - maxScore: always 1
-- feedback: string with specific feedback on what they got right/wrong
+- feedback: string with specific feedback on what they got right/wrong. If a source quote is provided, reference it in your feedback (e.g., "According to the text: '[quote]'...")
 - isCorrect: boolean (true if score >= 0.7)
 
-Be generous but fair. Consider partial credit for related concepts, even if not perfectly worded.${languageInstruction}`
+Be generous but fair. Consider partial credit for related concepts, even if not perfectly worded. When a source quote is available, use it to provide more specific feedback about where the information came from.${languageInstruction}`
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
@@ -130,7 +135,7 @@ Be generous but fair. Consider partial credit for related concepts, even if not 
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, userAnswer, correctAnswer } = await request.json()
+    const { question, userAnswer, correctAnswer, sourceQuote } = await request.json()
 
     if (!question || !userAnswer || !correctAnswer) {
       return NextResponse.json(
@@ -139,7 +144,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const analysis = await analyzeOpenEndedAnswer(question, userAnswer, correctAnswer)
+    const analysis = await analyzeOpenEndedAnswer(question, userAnswer, correctAnswer, sourceQuote)
     
     return NextResponse.json(analysis)
   } catch (error) {
