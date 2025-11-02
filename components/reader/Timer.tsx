@@ -128,8 +128,8 @@ export default function Timer({
       <div className="text-center">
         <div
           className={cn(
-            'font-mono font-bold mb-2 transition-all duration-300 ease-in',
-            isFloating ? 'text-3xl' : 'text-6xl'
+            'font-mono font-bold mb-3 transition-all duration-300 ease-in',
+            isFloating ? 'text-4xl' : 'text-7xl'
           )}
         >
           {formatTime(Math.ceil(displayTime / 1000))}
@@ -139,6 +139,7 @@ export default function Timer({
             variant={
               isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'
             }
+            className="text-sm px-3 py-1"
           >
             {isFinished
               ? "Time's Up!"

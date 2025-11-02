@@ -21,9 +21,20 @@ const config: Config = {
             'background-position': '200% 0',
           },
         },
+        fadeIn: {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(10px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
       },
       animation: {
         shimmer: 'shimmer 2s ease-in-out infinite',
+        fadeIn: 'fadeIn 1s ease-in-out forwards',
       },
       colors: {
         background: 'hsl(var(--background))',

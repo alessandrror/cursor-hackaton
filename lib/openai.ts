@@ -190,8 +190,7 @@ Be generous but fair. Consider partial credit for related concepts, even if not 
       isCorrect: analysis.isCorrect || false,
     }
   } catch (error) {
-    console.error('Error analyzing open-ended answer:', error)
-    // Fallback to simple string comparison
+    // Error analyzing open-ended answer - fallback to simple string comparison
     const isCorrect =
       userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim()
     return {

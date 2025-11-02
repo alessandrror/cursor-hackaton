@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Clock, BookOpen, CheckCircle, Home } from 'lucide-react'
+import { Clock, BookOpen, CheckCircle, Home, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -19,6 +19,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/hooks/use-toast'
 import { useRingtone } from '@/hooks/use-ringtone'
@@ -59,7 +61,7 @@ export default function Reader() {
   const handleStartQuiz = () => {
     setShowTimeUpModal(false)
     stopRingtone()
-    router.push('/quiz')
+    router.push('/study/quiz')
   }
 
   const handleEarlyQuiz = () => {
@@ -67,7 +69,7 @@ export default function Reader() {
       title: 'Great job! 🎉',
       description: 'You finished reading early! Starting quiz...',
     })
-    router.push('/quiz')
+    router.push('/study/quiz')
   }
 
   const handleStartOver = () => {
@@ -98,19 +100,21 @@ export default function Reader() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Timer Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+      <Card className="border-2 shadow-lg">
+        <CardHeader className="text-center pb-4">
+          <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Clock className="h-8 w-8 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
             Reading Timer
           </CardTitle>
-          <CardDescription>
-            Take your time to read through the material
+          <CardDescription className="text-base">
+            Take your time to read through the material at your own pace
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <Timer
             initialTimeMs={state.readingTimeMs}
             onTimeUp={handleTimeUp}
@@ -125,19 +129,27 @@ export default function Reader() {
       </Card>
 
       {/* Reading Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Reading Material
-          </CardTitle>
-          <CardDescription>
-            Source: {state.source === 'pdf' ? 'PDF Upload' : 'Text Input'}
-          </CardDescription>
+      <Card className="border-2 shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-secondary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold">Reading Material</CardTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="outline" className="text-xs">
+                    {state.source === 'pdf' ? 'PDF Upload' : 'Text Input'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="prose prose-invert max-w-none">
-            <div className="whitespace-pre-wrap leading-relaxed">
+            <div className="whitespace-pre-wrap leading-relaxed text-base p-6 bg-muted/30 rounded-lg border border-border/50">
               {state.text}
             </div>
           </div>
@@ -145,56 +157,65 @@ export default function Reader() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex justify-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-center gap-4">
         <Button
           onClick={() => setShowStartOverDialog(true)}
           variant="outline"
           size="lg"
-          className="gap-2"
+          className="gap-2 h-12 text-base"
         >
-          <Home className="h-4 w-4" />
+          <Home className="h-5 w-5" />
           Start Over
         </Button>
-        <Button onClick={handleEarlyQuiz} size="lg" className="gap-2">
-          <CheckCircle className="h-4 w-4" />
-          End Reading & Start Quiz
+        <Button 
+          onClick={handleEarlyQuiz} 
+          size="lg" 
+          className="gap-2 h-12 text-base font-semibold"
+        >
+          <CheckCircle className="h-5 w-5" />
+          Finish Reading & Start Quiz
         </Button>
       </div>
 
       {/* Time's Up Modal */}
       <Dialog open={showTimeUpModal} onOpenChange={setShowTimeUpModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center">
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Clock className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+            <DialogTitle className="text-2xl font-bold flex items-center justify-center gap-2">
               Time&apos;s Up! ⏰
             </DialogTitle>
-            <DialogDescription>
-              Your reading time is complete. You can continue reading or start
-              the quiz now.
+            <DialogDescription className="text-base mt-2">
+              Your reading time is complete. You can continue reading or start the quiz now.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={handleContinueReading}>
+          <DialogFooter className="gap-2 sm:flex-row">
+            <Button variant="outline" onClick={handleContinueReading} className="flex-1">
               Continue Reading
             </Button>
-            <Button onClick={handleStartQuiz}>Start Quiz</Button>
+            <Button onClick={handleStartQuiz} className="flex-1">
+              Start Quiz
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Start Over Confirmation Dialog */}
       <Dialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Home className="h-5 w-5" />
               Start Over?
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-base">
               This will clear your current study material and quiz. You&apos;ll return to the home page to start fresh.
-              <div className="mt-2 p-2 bg-muted rounded text-sm">
-                Current reading progress will be lost.
+              <div className="mt-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                <div className="text-sm font-semibold text-destructive">
+                  Current reading progress will be lost.
+                </div>
               </div>
             </DialogDescription>
           </DialogHeader>

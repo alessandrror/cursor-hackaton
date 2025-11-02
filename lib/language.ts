@@ -15,7 +15,7 @@ export function detectLanguage(text: string): SupportedLanguage {
   // Simplified language detection using common words and characters
   
   // Spanish detection
-  const spanishWords = ['de', 'la', 'el', 'en', 'por', 'para', 'con', 'del', 'las', 'los', 'una', 'este', 'esta', 'cada', 'estudiante', 'actividad', 'evaluada', 'foro', 'individual', 'asignación', 'participar', 'documento', 'dimensión', 'política', 'fe', 'opción', 'pobres', 'experiencia', 'eclesial', 'salvador', 'centroamérica', 'mons', 'oscar', 'arnulfo', 'romero', 'cristiano', 'pensamiento', 'social', 'indicaciones', 'unidad', 'parte', 'grupal', 'cuartetos', 'tarea', 'grupo', 'trabajo', 'entregada', 'páginas', 'portada', 'carátula', 'asignatura', 'actividad', 'nómina', 'integrantes', 'orden', 'alfabético', 'apellido', 'número', 'carné', 'fecha', 'entrega', 'evidencias', 'esfuerzo', 'colaboración', 'plagio', 'copia', 'pega', 'información', 'revisar', 'indicaciones', 'rúbrica', 'integrante', 'procede', 'subir', 'formato', 'word', 'entregas', 'realizarlas', 'lunes', 'octubre', 'última', 'sábado', 'pm', 'tener', 'presente', 'entrega', 'trabajos', 'pasada', 'revisa', 'califica', 'encuentra', 'apartado', 'calificados', 'avisa', 'estudiantes', 'observaciones', 'nota', 'obtenida', 'comunicarse', 'docente', 'reclamo', 'calificado', 'conocer', 'obtenida', 'días', 'presentar', 'finalmente', 'sube', 'notas', 'portal', 'web', 'individual', 'grupal', 'condiciones', 'olvidar', 'motivo', 'elaboración', 'evitar', 'cualquier', 'tipo', 'presentarlo', 'propio', 'asignatura', 'fín', 'obtener', 'calificación', 'reglamento', 'general', 'cap', 'derechos', 'deberes', 'estudiantes', 'art', 'inciso', 'relacionada', 'tema', 'notarse', 'perspectiva', 'jóvenes', 'universitarios', 'propuesta', 'solución', 'ofrece', 'psc', 'mostrar', 'aceptable', 'cantidad', 'fuentes', 'citas', 'ordenadas', 'redactar', 'coherencia', 'ideas', 'párrafo', 'buena', 'ortografía', 'puntuación', 'lean', 'muy', 'bien', 'redacción', 'deben', 'citar', 'documentos', 'utilizados', 'cuerpo', 'siguiendo', 'normas', 'apa', 'ideas', 'encuentran', 'alguna', 'fuente', 'consultada', 'ver', 'enlaces', 'muestran', 'ejemplos', 'citar', 'según', 'normas', 'apa', 'ex-aula', 'debe', 'entregada', 'formato', 'word', 'tipo', 'letra', 'calibri', 'tamaño', 'interlineado', 'múltiple', 'breve', 'espacio', 'párrafos', 'alinear', 'izquierda', 'realiza', 'grupos', 'organizados', 'cuartetos', 'solamente', 'estudiantes', 'tienen', 'grupo', 'harán', 'individual', 'conocer', 'criterios', 'evaluación', 'deben', 'leer', 'rúbrica', 'evaluar', 'reporte', 'análisis', 'problemáticas', 'propuesta', 'solución', 'alcancen', 'buen', 'desempeño', 'final']
+  const spanishWords = ['de', 'la', 'el', 'en', 'por', 'para', 'con', 'del', 'las', 'los', 'una', 'este', 'esta', 'cada', 'estudiante', 'actividad', 'evaluada', 'foro', 'individual', 'asignación', 'participar', 'documento', 'dimensión', 'política', 'fe', 'opción', 'pobres', 'experiencia', 'eclesial', 'salvador', 'centroamérica', 'mons', 'oscar', 'arnulfo', 'romero', 'cristiano', 'pensamiento', 'social', 'indicaciones', 'unidad', 'parte', 'grupal', 'cuartetos', 'tarea', 'grupo', 'trabajo', 'entregada', 'páginas', 'portada', 'carátula', 'asignatura', 'actividad', 'nómina', 'integrantes', 'orden', 'alfabético', 'apellido', 'número', 'carné', 'fecha', 'entrega', 'evidencias', 'esfuerzo', 'colaboración', 'plagio', 'copia', 'pega', 'información', 'revisar', 'indicaciones', 'rúbrica', 'integrante', 'procede', 'subir', 'formato', 'word', 'entregas', 'realizarlas', 'lunes', 'octubre', 'última', 'sábado', 'pm', 'tener', 'presente', 'entrega', 'trabajos', 'pasada', 'revisa', 'califica', 'encuentra', 'apartado', 'calificados', 'avisa', 'estudiantes', 'observaciones', 'nota', 'obtenida', 'comunicarse', 'docente', 'reclamo', 'calificado', 'conocer', 'obtenida', 'días', 'presentar', 'finalmente', 'sube', 'notas', 'portal', 'web', 'individual', 'grupal', 'condiciones', 'olvidar', 'motivo', 'elaboración', 'evitar', 'cualquier', 'tipo', 'presentarlo', 'propio', 'asignatura', 'fín', 'obtener', 'calificación', 'reglamento', 'general', 'cap', 'derechos', 'deberes', 'estudiantes', 'art', 'inciso', 'relacionada', 'tema', 'notarse', 'perspectiva', 'jóvenes', 'universitarios', 'propuesta', 'solución', 'ofrece', 'psc', 'mostrar', 'aceptable', 'cantidad', 'fuentes', 'citas', 'ordenadas', 'redactar', 'coherencia', 'ideas', 'párrafo', 'buena', 'ortografía', 'puntuación', 'lean', 'muy', 'bien', 'redacción', 'deben', 'citar', 'documentos', 'utilizados', 'cuerpo', 'siguiendo', 'normas', 'apa', 'ideas', 'encuentran', 'alguna', 'fuente', 'consultada', 'ver', 'enlaces', 'muestran', 'ejemplos', 'citar', 'según', 'normas', 'apa', 'ex-aula', 'debe', 'entregada', 'formato', 'word', 'tipo', 'letra', 'calibri', 'tamaño', 'interlineado', 'múltiple', 'breve', 'espacio', 'párrafos', 'alinear', 'izquierda', 'realiza', 'grupos', 'organizados', 'cuartetos', 'solamente', 'estudiantes', 'tienen', 'grupo', 'harán', 'individual', 'conocer', 'criterios', 'evaluación', 'deben', 'leer', 'rúbrica', 'evaluar', 'reporte', 'análisis', 'problemáticas', 'propuesta', 'solución', 'alcancen', 'buen', 'desempeño', 'final', 'desarrollador', 'desarrolladora', 'desarrollo', 'tecnología', 'tecnologías', 'frontend', 'backend', 'fullstack', 'aplicación', 'aplicaciones', 'proyecto', 'proyectos', 'empresa', 'empresas', 'cliente', 'clientes', 'equipo', 'equipos', 'colaboración', 'colaboraciones', 'implementación', 'implementaciones', 'solución', 'soluciones', 'mejora', 'mejoras', 'optimización', 'optimizaciones', 'experiencia', 'experiencias', 'profesional', 'profesionales', 'competencias', 'habilidades', 'conocimientos', 'certificaciones', 'educación', 'formación', 'académica', 'universidad', 'universidades', 'grado', 'título', 'especialización', 'curso', 'cursos', 'certificado', 'certificados', 'idioma', 'idiomas', 'español', 'inglés', 'francés', 'alemán', 'italiano', 'portugués', 'año', 'años', 'mes', 'meses', 'fecha', 'fechas', 'inicio', 'fin', 'actual', 'actualmente', 'responsabilidades', 'responsabilidad', 'logros', 'logro', 'méritos', 'mérito', 'reconocimientos', 'reconocimiento', 'herramientas', 'herramienta', 'frameworks', 'framework', 'librerías', 'librería', 'bibliotecas', 'biblioteca', 'lenguajes', 'lenguaje', 'programación', 'programador', 'programadora', 'ingeniero', 'ingeniera', 'ingeniería', 'sistemas', 'computación', 'informática', 'software', 'hardware', 'redes', 'servidores', 'bases', 'datos', 'base', 'dato', 'diseño', 'diseñador', 'diseñadora', 'interfaz', 'usuario', 'usabilidad', 'accesibilidad', 'rendimiento', 'rendimientos', 'escalabilidad', 'seguridad', 'pruebas', 'prueba', 'testing', 'desarrollo', 'desarrollos', 'mantenimiento', 'soporte', 'documentación', 'código', 'códigos', 'repositorio', 'repositorios', 'control', 'versiones', 'versión', 'git', 'github', 'gitlab', 'bitbucket', 'metodologías', 'metodología', 'ágil', 'scrum', 'kanban', 'sprint', 'sprints', 'reuniones', 'reunión', 'comunicación', 'comunicaciones', 'presentaciones', 'presentación', 'reportes', 'reporte', 'análisis', 'requisitos', 'requisito', 'planificación', 'planificaciónes', 'estimación', 'estimaciones', 'seguimiento', 'seguimientos', 'evaluación', 'evaluaciones', 'retrospectiva', 'retrospectivas', 'mejora', 'mejoras', 'continua', 'continuo', 'continuos', 'mejora', 'mejoras', 'continua', 'continuo', 'continuos']
   const spanishChars = /[ñáéíóúü]/
   
   // French detection  
@@ -42,15 +42,35 @@ export function detectLanguage(text: string): SupportedLanguage {
   let portugueseScore = 0
 
   // Check Spanish patterns
+  // Spanish-specific words that don't exist in Portuguese (containing ñ or unique Spanish forms)
+  const spanishSpecificWords = ['año', 'años', 'español', 'española', 'diseño', 'diseñador', 'diseñadora', 'tecnología', 'tecnologías', 'programación', 'programador', 'programadora', 'ingeniería', 'informática', 'educación', 'formación', 'certificación', 'certificaciones', 'universidad', 'universidades', 'grado', 'título', 'especialización', 'curso', 'cursos', 'certificado', 'certificados', 'idioma', 'idiomas', 'inglés', 'francés', 'alemán', 'italiano', 'portugués', 'mes', 'meses', 'fecha', 'fechas', 'inicio', 'fin', 'actual', 'actualmente', 'responsabilidades', 'responsabilidad', 'logros', 'logro', 'méritos', 'mérito', 'reconocimientos', 'reconocimiento', 'herramientas', 'herramienta', 'frameworks', 'framework', 'librerías', 'librería', 'bibliotecas', 'biblioteca', 'lenguajes', 'lenguaje', 'sistemas', 'computación', 'redes', 'servidores', 'bases', 'datos', 'base', 'dato', 'usuario', 'usabilidad', 'accesibilidad', 'rendimiento', 'rendimientos', 'escalabilidad', 'seguridad', 'pruebas', 'prueba', 'testing', 'desarrollos', 'mantenimiento', 'soporte', 'documentación', 'código', 'códigos', 'repositorio', 'repositorios', 'control', 'versiones', 'versión', 'git', 'github', 'gitlab', 'bitbucket', 'metodologías', 'metodología', 'ágil', 'scrum', 'kanban', 'sprint', 'sprints', 'reuniones', 'reunión', 'comunicación', 'comunicaciones', 'presentaciones', 'presentación', 'reportes', 'reporte', 'análisis', 'requisitos', 'requisito', 'planificación', 'planificaciónes', 'estimación', 'estimaciones', 'seguimiento', 'seguimientos', 'evaluación', 'evaluaciones', 'retrospectiva', 'retrospectivas']
+  
   for (const word of spanishWords) {
     const regex = new RegExp('\\b' + word + '\\b', 'g')
     const matches = normalizedText.match(regex)
     if (matches) {
-      spanishScore += matches.length
+      // Give extra weight to Spanish-specific words
+      if (spanishSpecificWords.includes(word)) {
+        spanishScore += matches.length * 2
+      } else {
+        spanishScore += matches.length
+      }
     }
   }
+  
+  // Check for Spanish-specific character "ñ" (unique to Spanish)
+  if (/ñ/.test(text)) {
+    spanishScore += 10 // Strong boost for ñ character
+  }
+  
+  // Boost for other Spanish characters
   if (spanishChars.test(text)) {
-    spanishScore += 5 // Boost score for Spanish characters
+    spanishScore += 5
+  }
+  
+  // Penalize Portuguese if Spanish indicators are present
+  if (/ñ/.test(text)) {
+    portugueseScore = Math.max(0, portugueseScore - 10) // Strong penalty if ñ is present
   }
 
   // Check French patterns
@@ -90,13 +110,27 @@ export function detectLanguage(text: string): SupportedLanguage {
   }
 
   // Check Portuguese patterns
+  // Portuguese-specific words that don't exist in Spanish
+  const portugueseSpecificWords = ['você', 'vocês', 'não', 'também']
+  
   for (const word of portugueseWords) {
     const regex = new RegExp('\\b' + word + '\\b', 'g')
     const matches = normalizedText.match(regex)
     if (matches) {
-      portugueseScore += matches.length
+      // Give extra weight to Portuguese-specific words
+      if (portugueseSpecificWords.includes(word)) {
+        portugueseScore += matches.length * 2
+      } else {
+        portugueseScore += matches.length
+      }
     }
   }
+  
+  // Check for Portuguese-specific characters (ã, õ, ç)
+  if (/[ãõ]/.test(text)) {
+    portugueseScore += 10 // Strong boost for Portuguese-specific characters
+  }
+  
   if (portugueseChars.test(text)) {
     portugueseScore += 5 // Boost score for Portuguese characters
   }

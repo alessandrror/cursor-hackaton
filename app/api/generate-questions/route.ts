@@ -15,11 +15,28 @@ interface OpenAIResponse {
   }>
 }
 
-async function generateQuestions(text: string, questionRange?: { min: number; max: number }): Promise<Question[]> {
+async function generateQuestions(
+  text: string, 
+  questionRange?: { min: number; max: number },
+  page?: number,
+  itemsPerPage?: number,
+  totalQuestions?: number
+): Promise<Question[]> {
   const wordCount = text.trim().split(/\s+/).length
   
   let questionCount: number
-  if (questionRange) {
+  let startOffset = 0
+  
+  if (page !== undefined && itemsPerPage !== undefined && totalQuestions !== undefined) {
+    // Generate questions for a specific page (lazy loading)
+    startOffset = page * itemsPerPage
+    const remainingQuestions = totalQuestions - startOffset
+    questionCount = Math.min(itemsPerPage, remainingQuestions)
+    
+    if (questionCount <= 0 || startOffset >= totalQuestions) {
+      return []
+    }
+  } else if (questionRange) {
     // Generate random number within the specified range
     questionCount = Math.floor(Math.random() * (questionRange.max - questionRange.min + 1)) + questionRange.min
   } else {
@@ -31,12 +48,14 @@ async function generateQuestions(text: string, questionRange?: { min: number; ma
   const detectedLanguage = detectLanguage(text)
   const languageName = getLanguageName(detectedLanguage)
   
-  // Create language-specific instructions
-  const languageInstruction = detectedLanguage === 'en' 
-    ? '' 
-    : `\n\nIMPORTANT: Generate all questions, options, and answers in ${languageName}. The user's text is in ${languageName}, so respond entirely in ${languageName}.`
+  // Create language-specific instructions - always include language instruction to ensure consistency
+  const languageInstruction = `\n\nCRITICAL LANGUAGE REQUIREMENT: The source text is in ${languageName}. You MUST generate ALL questions, ALL options, and ALL answers EXCLUSIVELY in ${languageName}. Do NOT use any other language. Every single word must be in ${languageName}.`
 
-  const prompt = `Generate ${questionCount} quiz questions based on the following text. Return a JSON array where each question has:
+  const pageInfo = page !== undefined 
+    ? `\n\nGenerate questions ${startOffset + 1} to ${startOffset + questionCount} of ${totalQuestions} total questions.`
+    : ''
+    
+  const prompt = `Generate ${questionCount} quiz questions based on the following text.${pageInfo} Return a JSON array where each question has:
 - id: unique string identifier
 - type: "multiple-choice", "true-false", or "short-answer"
 - question: the question text
@@ -53,7 +72,7 @@ Text: ${text.substring(0, 4000)}`
     {
       role: 'system',
       content:
-        'You are a helpful assistant that generates educational quiz questions. Always respond with valid JSON only, no markdown formatting or additional text.',
+        `You are a helpful assistant that generates educational quiz questions. Always respond with valid JSON only, no markdown formatting or additional text. CRITICAL: All questions, options, and answers must be generated in ${languageName} - the same language as the source text. Never use any other language.`,
     },
     {
       role: 'user',
@@ -110,8 +129,9 @@ Text: ${text.substring(0, 4000)}`
 
     // Add IDs if missing and validate structure
     const validatedQuestions = questions.map((q, index) => {
+      const questionNumber = startOffset + index + 1
       const question = {
-        id: q.id || `q${index + 1}`,
+        id: q.id || `q${questionNumber}`,
         type: q.type,
         question: q.question,
         options: q.options,
@@ -211,7 +231,7 @@ Text: ${text.substring(0, 4000)}`
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, questionRange } = await request.json()
+    const { text, questionRange, page, itemsPerPage, totalQuestions } = await request.json()
 
     if (!text || typeof text !== 'string' || !text.trim()) {
       return NextResponse.json(
@@ -236,12 +256,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const questions = await generateQuestions(text, questionRange)
+    // Validate pagination parameters if provided
+    if (page !== undefined) {
+      if (typeof page !== 'number' || page < 0) {
+        return NextResponse.json(
+          { error: 'Page must be a non-negative number' },
+          { status: 400 }
+        )
+      }
+      if (typeof itemsPerPage !== 'number' || itemsPerPage < 1) {
+        return NextResponse.json(
+          { error: 'itemsPerPage must be a positive number' },
+          { status: 400 }
+        )
+      }
+      if (typeof totalQuestions !== 'number' || totalQuestions < 1) {
+        return NextResponse.json(
+          { error: 'totalQuestions must be a positive number' },
+          { status: 400 }
+        )
+      }
+    }
+
+    const questions = await generateQuestions(text, questionRange, page, itemsPerPage, totalQuestions)
     
     return NextResponse.json({ questions })
   } catch (error) {
-    console.error('Error generating questions:', error)
-    
+    // Error generating questions
     return NextResponse.json(
       { 
         error: error instanceof Error ? error.message : 'Failed to generate questions' 

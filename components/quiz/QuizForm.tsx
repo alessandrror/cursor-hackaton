@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Home, Trash2 } from 'lucide-react'
+import { CheckCircle, Home, Trash2, ChevronLeft, ChevronRight, Brain, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -21,41 +21,70 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
 import { useSession } from '@/providers/SessionProvider'
+import { Question } from '@/types/session'
 import { useToast } from '@/hooks/use-toast'
 import QuizSkeleton from './QuizSkeleton'
+import { cn } from '@/lib/utils'
 
 export default function QuizForm() {
   const router = useRouter()
   const { state, setQuestions, setAnswer, clearSessionData, clearAnswers, setQuestionRange } = useSession()
   const { toast } = useToast()
   const [isGenerating, setIsGenerating] = useState(false)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [showClearAnswersDialog, setShowClearAnswersDialog] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalQuestions, setTotalQuestions] = useState<number | null>(null)
+  const [loadingPages, setLoadingPages] = useState<Set<number>>(new Set())
+  const loadingPagesRef = useRef<Set<number>>(new Set())
+  const generatedPagesRef = useRef<Set<number>>(new Set())
+  const questionsRef = useRef<Question[]>([])
+  const isInitializingRef = useRef(false)
+  const itemsPerPage = 10
 
-  const handleGenerateQuestions = useCallback(async (questionRange?: { min: number; max: number }) => {
-    if (!state.text) {
-      toast({
-        title: 'Missing information',
-        description: 'Please go back and provide text to study.',
-        variant: 'destructive',
-      })
+  // Generate questions for a specific page (non-callback function to avoid dependency issues)
+  const generateQuestionsForPage = async (
+    page: number,
+    totalCount: number,
+    questionRange?: { min: number; max: number },
+    text?: string
+  ) => {
+    // Prevent duplicate requests
+    if (generatedPagesRef.current.has(page) || loadingPagesRef.current.has(page)) {
       return
     }
 
+    const textToUse = text || state.text
+    if (!textToUse) return
+    // Mark as loading
+    loadingPagesRef.current.add(page)
+    setLoadingPages((prev) => {
+      const next = new Set(prev)
+      next.add(page)
+      return next
+    })
     setIsGenerating(true)
+    
     try {
+      const range = questionRange || state.questionRange || { min: 10, max: 20 }
       const response = await fetch('/api/generate-questions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          text: state.text,
-          questionRange: questionRange || state.questionRange
+          text: textToUse,
+          questionRange: range,
+          page,
+          itemsPerPage,
+          totalQuestions: totalCount
         }),
       })
 
@@ -64,12 +93,18 @@ export default function QuizForm() {
         throw new Error(errorData.error || 'Failed to generate questions')
       }
 
-      const { questions } = await response.json()
-      setQuestions(questions)
-      toast({
-        title: 'Questions generated!',
-        description: `Created ${questions.length} questions for your quiz.`,
-      })
+      const { questions: newQuestions } = await response.json()
+      
+      if (newQuestions.length > 0) {
+        const currentQuestions = questionsRef.current
+        const existingIds = new Set(currentQuestions.map((q: Question) => q.id))
+        const uniqueNewQuestions = newQuestions.filter((q: Question) => !existingIds.has(q.id))
+        
+        if (uniqueNewQuestions.length > 0) {
+          setQuestions([...currentQuestions, ...uniqueNewQuestions])
+          generatedPagesRef.current.add(page)
+        }
+      }
     } catch (error) {
       toast({
         title: 'Failed to generate questions',
@@ -77,54 +112,149 @@ export default function QuizForm() {
           error instanceof Error ? error.message : 'Please try again.',
         variant: 'destructive',
       })
+      loadingPagesRef.current.delete(page)
     } finally {
+      loadingPagesRef.current.delete(page)
+      setLoadingPages((prev) => {
+        const next = new Set(prev)
+        next.delete(page)
+        return next
+      })
       setIsGenerating(false)
     }
-  }, [state.text, state.questionRange, setQuestions, toast])
+  }
+
+  // Auto-generate questions when text is available and no questions exist
+  useEffect(() => {
+    if (!state.text || state.questions.length > 0 || totalQuestions || isInitializingRef.current) {
+      return
+    }
+    
+    const defaultRange = state.questionRange || { min: 10, max: 20 }
+    
+    // Prevent multiple simultaneous initializations
+    isInitializingRef.current = true
+    
+    // Calculate total questions from range
+    const range = defaultRange
+    const total = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min
+    
+    // Reset state first
+    setQuestions([])
+    setCurrentPage(0)
+    generatedPagesRef.current.clear()
+    loadingPagesRef.current.clear()
+    
+    // Now set totalQuestions (this will trigger useEffect, but we'll generate page 0 directly)
+    setTotalQuestions(total)
+    
+    // Generate first page directly
+    if (total && state.text) {
+      generateQuestionsForPage(0, total, defaultRange, state.text).finally(() => {
+        isInitializingRef.current = false
+      })
+    } else {
+      isInitializingRef.current = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.text, state.questions.length])
+
+  // Check if current page questions exist, generate if missing
+  useEffect(() => {
+    if (!totalQuestions || !state.text) return
+    
+    const page = currentPage
+    
+    // Check if this page has already been generated or is currently loading
+    if (generatedPagesRef.current.has(page) || loadingPagesRef.current.has(page)) {
+      return
+    }
+    
+    // Generate questions for this page using inline function to avoid dependency issues
+    const generatePage = async () => {
+      // Double-check we're not already loading/generated (race condition protection)
+      if (generatedPagesRef.current.has(page) || loadingPagesRef.current.has(page)) {
+        return
+      }
+      
+      await generateQuestionsForPage(page, totalQuestions, undefined, state.text)
+    }
+    
+    generatePage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, totalQuestions])
 
   // Load existing answers from session
   useEffect(() => {
-    const existingAnswers: Record<string, string> = {}
+    const existingAnswers: Record<string, string | string[]> = {}
     state.answers.forEach((answer) => {
-      existingAnswers[answer.questionId] = answer.answer
+      const question = state.questions.find(q => q.id === answer.questionId)
+      // If it's a multiple-choice question with more than 2 options, it's multiple select
+      // Parse comma-separated string back to array
+      if (question?.type === 'multiple-choice' && question.options && question.options.length > 2) {
+        existingAnswers[answer.questionId] = answer.answer ? answer.answer.split(',').map(s => s.trim()) : []
+      } else {
+        existingAnswers[answer.questionId] = answer.answer
+      }
     })
     setAnswers(existingAnswers)
-  }, [state.answers])
+  }, [state.answers, state.questions])
 
-
-  // Auto-generate questions when text is available and no questions exist
-  // Use default range (10-20) if no range is configured
+  // Keep refs in sync with state
   useEffect(() => {
-    if (state.text && state.questions.length === 0) {
-      const defaultRange = state.questionRange || { min: 10, max: 20 }
-      handleGenerateQuestions(defaultRange)
-    }
-  }, [
-    state.text,
-    state.questions.length,
-    handleGenerateQuestions,
-    state.questionRange,
-  ])
+    loadingPagesRef.current = loadingPages
+    questionsRef.current = state.questions
+  }, [loadingPages, state.questions])
 
-
-  const handleAnswerChange = (questionId: string, answer: string) => {
+  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }))
-    setAnswer({ questionId, answer })
+    const answerStr = Array.isArray(answer) ? answer.join(', ') : answer
+    setAnswer({ questionId, answer: answerStr })
   }
 
-  const handleSubmit = () => {
-    const unansweredQuestions = state.questions.filter((q) => !answers[q.id])
-
-    if (unansweredQuestions.length > 0) {
-      toast({
-        title: 'Incomplete quiz',
-        description: `Please answer all ${unansweredQuestions.length} remaining questions.`,
-        variant: 'destructive',
-      })
-      return
+  const handleMultipleSelectChange = (questionId: string, option: string, checked: boolean) => {
+    const currentAnswer = answers[questionId] || []
+    const currentArray = Array.isArray(currentAnswer) ? currentAnswer : currentAnswer ? [currentAnswer] : []
+    
+    if (checked) {
+      handleAnswerChange(questionId, [...currentArray, option])
+    } else {
+      handleAnswerChange(questionId, currentArray.filter((a) => a !== option))
     }
+  }
 
-    router.push('/results')
+
+  const handleSubmit = async () => {
+    // Generate all remaining questions before submitting
+    if (totalQuestions && state.questions.length < totalQuestions) {
+      const remainingPages = Math.ceil((totalQuestions - state.questions.length) / itemsPerPage)
+      const currentLastPage = Math.floor(state.questions.length / itemsPerPage)
+      
+      for (let page = currentLastPage; page < currentLastPage + remainingPages; page++) {
+        if (!loadingPagesRef.current.has(page) && !generatedPagesRef.current.has(page)) {
+          await generateQuestionsForPage(page, totalQuestions, undefined, state.text)
+        }
+      }
+    }
+    
+    // Wait a bit for questions to load, then check answers
+    setTimeout(() => {
+      const expectedQuestions = totalQuestions || state.questions.length
+      const unansweredQuestions = state.questions
+        .slice(0, expectedQuestions)
+        .filter((q) => !answers[q.id] || (Array.isArray(answers[q.id]) && answers[q.id].length === 0))
+
+      if (unansweredQuestions.length > 0) {
+        toast({
+          title: 'Incomplete quiz',
+          description: `Please answer all ${unansweredQuestions.length} remaining questions.`,
+          variant: 'destructive',
+        })
+        return
+      }
+
+      router.push('/study/results')
+    }, 500)
   }
 
   const handleStartOver = () => {
@@ -147,16 +277,45 @@ export default function QuizForm() {
     })
   }
 
+  // Calculate pagination
+  const totalPages = totalQuestions ? Math.ceil(totalQuestions / itemsPerPage) : Math.ceil(state.questions.length / itemsPerPage)
+  const startIndex = currentPage * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedQuestions = state.questions.slice(startIndex, endIndex)
+  const isPageLoading = loadingPages.has(currentPage)
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const handleQuestionClick = (questionIndex: number) => {
+    const targetPage = Math.floor(questionIndex / itemsPerPage)
+    setCurrentPage(targetPage)
+    // Scroll to question
+    setTimeout(() => {
+      const element = document.getElementById(`question-${questionIndex}`)
+      element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+  }
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
-        return 'bg-green-500/20 text-green-400'
+        return 'text-green-400 border-green-400'
       case 'medium':
-        return 'bg-yellow-500/20 text-yellow-400'
+        return 'text-blue-400 border-blue-400'
       case 'hard':
-        return 'bg-red-500/20 text-red-400'
+        return 'text-orange-400 border-orange-400'
       default:
-        return 'bg-gray-500/20 text-gray-400'
+        return 'text-gray-400 border-gray-400'
     }
   }
 
@@ -168,7 +327,6 @@ export default function QuizForm() {
   }
 
   if (state.questions.length === 0) {
-    // Show loading while generating questions
     const currentRange = state.questionRange || { min: 10, max: 20 }
     return (
       <div className="flex items-center justify-center py-8">
@@ -180,137 +338,292 @@ export default function QuizForm() {
     )
   }
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Quiz Time
-              </CardTitle>
-              <CardDescription>
-                Answer all {state.questions.length} questions to complete the quiz
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setShowClearAnswersDialog(true)}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                disabled={Object.keys(answers).length === 0}
-              >
-                <Trash2 className="h-4 w-4" />
-                Clear Answers
-              </Button>
-              <Button
-                onClick={() => setShowResetDialog(true)}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                <Home className="h-4 w-4" />
-                Start Over
-              </Button>
+  const hasAnswerValue = (answer: string | string[] | undefined): boolean => {
+    if (!answer) return false
+    if (Array.isArray(answer)) return answer.length > 0
+    return answer.trim() !== ''
+  }
+
+  const allQuestions = totalQuestions ? Array.from({ length: totalQuestions }, (_, i) => state.questions[i] || null) : state.questions
+  const answeredCount = allQuestions.filter((q) => q && hasAnswerValue(answers[q.id])).length
+  const unansweredCount = (totalQuestions || allQuestions.length) - answeredCount
+
+  // Split questions into two columns (5 per column)
+  const leftColumnQuestions = paginatedQuestions.slice(0, 5)
+  const rightColumnQuestions = paginatedQuestions.slice(5, 10)
+
+  const renderQuestion = (question: Question, globalIndex: number) => {
+    const hasAnswer = hasAnswerValue(answers[question.id])
+    const currentAnswer = answers[question.id] || (question.type === 'multiple-choice' && question.options && question.options.length > 2 ? [] : '')
+
+    return (
+      <Card key={question.id} id={`question-${globalIndex}`} className="border-2 mb-6">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <div className={cn(
+                'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0',
+                hasAnswer ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              )}>
+                {hasAnswer ? <CheckCircle2 className="h-4 w-4" /> : globalIndex + 1}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-medium text-muted-foreground">Question {globalIndex + 1} of {totalQuestions || allQuestions.length}</p>
+                </div>
+                <p className="text-base font-medium">{question.question}</p>
+              </div>
             </div>
           </div>
         </CardHeader>
-      </Card>
-
-      {state.questions.map((question, index) => (
-        <Card key={question.id}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Question {index + 1}</CardTitle>
-              <Badge className={getDifficultyColor(question.difficulty)}>
-                {question.difficulty}
-              </Badge>
-            </div>
-            <CardDescription>{question.question}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {question.type === 'multiple-choice' && question.options && (
-              <RadioGroup
-                value={answers[question.id] || ''}
-                onValueChange={(value) =>
-                  handleAnswerChange(question.id, value)
-                }
-              >
-                {question.options.map((option, optionIndex) => (
-                  <div
-                    key={optionIndex}
-                    className="flex items-center space-x-2"
-                  >
-                    <RadioGroupItem
-                      value={option}
-                      id={`${question.id}-${optionIndex}`}
-                    />
-                    <Label
-                      htmlFor={`${question.id}-${optionIndex}`}
-                      className="cursor-pointer"
-                    >
-                      {option}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            )}
-
-            {question.type === 'true-false' && (
-              <div>
-                {question.options && question.options.length > 0 ? (
-                  <RadioGroup
-                    value={answers[question.id] || ''}
-                    onValueChange={(value) =>
-                      handleAnswerChange(question.id, value)
-                    }
-                  >
-                    {question.options.map((option, optionIndex) => (
-                      <div
+        <CardContent className="pt-0">
+          {question.type === 'multiple-choice' && question.options && (
+            <>
+              {question.options.length > 2 ? (
+                // Multiple select (checkboxes)
+                <div className="space-y-3">
+                  {question.options.map((option, optionIndex) => {
+                    const optionArray = Array.isArray(currentAnswer) ? currentAnswer : []
+                    const isChecked = optionArray.includes(option)
+                    return (
+                      <label
                         key={optionIndex}
-                        className="flex items-center space-x-2"
+                        htmlFor={`${question.id}-${optionIndex}`}
+                        className={cn(
+                          'flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:border-primary/50 cursor-pointer bg-card',
+                          isChecked && 'border-primary bg-primary/10'
+                        )}
+                      >
+                        <Checkbox
+                          id={`${question.id}-${optionIndex}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => 
+                            handleMultipleSelectChange(question.id, option, checked === true)
+                          }
+                        />
+                        <span className="cursor-pointer flex-1 text-sm">{option}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              ) : (
+                // Single select (radio)
+                <RadioGroup
+                  value={typeof currentAnswer === 'string' ? currentAnswer : ''}
+                  onValueChange={(value) => handleAnswerChange(question.id, value)}
+                  className="space-y-3"
+                >
+                  {question.options.map((option, optionIndex) => {
+                    const isSelected = typeof currentAnswer === 'string' && currentAnswer === option
+                    return (
+                      <label
+                        key={optionIndex}
+                        htmlFor={`${question.id}-${optionIndex}`}
+                        className={cn(
+                          'flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:border-primary/50 cursor-pointer bg-card',
+                          isSelected && 'border-primary bg-primary/10'
+                        )}
                       >
                         <RadioGroupItem
                           value={option}
                           id={`${question.id}-${optionIndex}`}
+                          className="h-5 w-5"
                         />
-                        <Label
-                          htmlFor={`${question.id}-${optionIndex}`}
-                          className="cursor-pointer"
-                        >
-                          {option}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                ) : (
-                  <div className="text-red-500 text-sm">
-                    Error: True/False question missing options
-                  </div>
-                )}
+                        <span className="cursor-pointer flex-1 text-sm">{option}</span>
+                      </label>
+                    )
+                  })}
+                </RadioGroup>
+              )}
+            </>
+          )}
+
+          {question.type === 'true-false' && question.options && (
+            <RadioGroup
+              value={typeof currentAnswer === 'string' ? currentAnswer : ''}
+              onValueChange={(value) => handleAnswerChange(question.id, value)}
+              className="space-y-3"
+            >
+              {question.options.map((option, optionIndex) => (
+                <label
+                  key={optionIndex}
+                  htmlFor={`${question.id}-${optionIndex}`}
+                  className="flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:border-primary/50 cursor-pointer bg-card"
+                >
+                  <RadioGroupItem
+                    value={option}
+                    id={`${question.id}-${optionIndex}`}
+                    className="h-5 w-5"
+                  />
+                  <span className="cursor-pointer flex-1 text-sm">{option}</span>
+                </label>
+              ))}
+            </RadioGroup>
+          )}
+
+          {question.type === 'short-answer' && (
+            <Textarea
+              value={typeof currentAnswer === 'string' ? currentAnswer : ''}
+              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+              placeholder="Type your answer here..."
+              className="min-h-[100px] text-sm"
+            />
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="flex h-full w-full">
+      {/* Left Sidebar - Question Navigator */}
+      <aside className="w-64 border-r bg-card flex-shrink-0 overflow-y-auto">
+        <div className="p-4 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Review your answers</h3>
+            <div className="space-y-2 text-sm">
+              <div className="text-muted-foreground">Answered: {answeredCount}</div>
+              <div className="text-muted-foreground">Unanswered: {unansweredCount}</div>
+            </div>
+          </div>
+          
+          <div>
+            <div className="grid grid-cols-5 gap-2">
+              {Array.from({ length: totalQuestions || allQuestions.length }, (_, index) => {
+                const question = state.questions[index]
+                const hasAnswer = question ? hasAnswerValue(answers[question.id]) : false
+                const isCurrentPage = Math.floor(index / itemsPerPage) === currentPage
+                return (
+                  <button
+                    key={question?.id || `question-${index}`}
+                    onClick={() => handleQuestionClick(index)}
+                    className={cn(
+                      'h-8 w-8 rounded text-xs font-medium transition-colors',
+                      hasAnswer 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                      isCurrentPage && 'ring-2 ring-secondary'
+                    )}
+                    type="button"
+                  >
+                    {index + 1}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-bold">AI Fundamentals Quiz</h1>
+                <p className="text-muted-foreground mt-1">
+                  Progress: {answeredCount} of {totalQuestions || allQuestions.length}
+                </p>
               </div>
-            )}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Page {currentPage + 1} of {totalPages}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 0 || isPageLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage >= totalPages - 1 || isPageLoading}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
 
-            {question.type === 'short-answer' && (
-              <Input
-                value={answers[question.id] || ''}
-                onChange={(e) =>
-                  handleAnswerChange(question.id, e.target.value)
-                }
-                placeholder="Enter your answer..."
-              />
-            )}
-          </CardContent>
-        </Card>
-      ))}
+          {/* Questions - Two Column Layout */}
+          {isPageLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span>Loading questions for page {currentPage + 1}...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-0">
+                {leftColumnQuestions.map((question, pageIndex) => {
+                  const globalIndex = startIndex + pageIndex
+                  return renderQuestion(question, globalIndex)
+                })}
+              </div>
 
-      <div className="flex justify-center">
-        <Button onClick={handleSubmit} size="lg" className="gap-2">
-          <CheckCircle className="h-4 w-4" />
-          Submit Quiz
-        </Button>
+              {/* Right Column */}
+              <div className="space-y-0">
+                {rightColumnQuestions.map((question, pageIndex) => {
+                  const globalIndex = startIndex + pageIndex + 5
+                  return renderQuestion(question, globalIndex)
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Pagination at Bottom */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-8 pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={handlePreviousPage}
+                disabled={currentPage === 0 || isPageLoading}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous Page
+              </Button>
+              
+              <div className="flex gap-2">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <Button
+                    key={i}
+                    variant={currentPage === i ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage(i)}
+                    disabled={isPageLoading}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+              </div>
+              
+              <Button
+                variant="outline"
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages - 1 || isPageLoading}
+              >
+                Next Page
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-center mt-8 pt-6 border-t">
+            <Button onClick={handleSubmit} size="lg" className="gap-2 h-12 text-base font-semibold px-8">
+              <CheckCircle className="h-5 w-5" />
+              Submit Quiz
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Start Over Confirmation Dialog */}
@@ -325,7 +638,7 @@ export default function QuizForm() {
               This will clear your current study material and quiz. You&apos;ll return to the home page to start fresh.
             </DialogDescription>
             <div className="mt-2 p-2 bg-muted rounded text-sm">
-              You have answered {Object.keys(answers).length} of {state.questions.length} questions.
+              You have answered {answeredCount} of {totalQuestions || allQuestions.length} questions.
             </div>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -357,7 +670,7 @@ export default function QuizForm() {
               This will clear all your quiz responses but keep the questions intact. You can answer them again.
             </DialogDescription>
             <div className="mt-2 p-2 bg-muted rounded text-sm">
-              You have answered {Object.keys(answers).length} of {state.questions.length} questions.
+              You have answered {answeredCount} of {totalQuestions || allQuestions.length} questions.
             </div>
           </DialogHeader>
           <DialogFooter className="gap-2">

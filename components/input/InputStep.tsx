@@ -2,46 +2,25 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, BookOpen, Trash2 } from 'lucide-react'
+import { Upload, FileText, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSession } from '@/providers/SessionProvider'
 import { extractTextFromPdf } from '@/lib/pdf'
-import { countWords, calculateReadingTime, formatTime } from '@/lib/utils'
+import { countWords, calculateReadingTime } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
 export default function InputStep() {
   const router = useRouter()
-  const { state, setApiKey, setSource, setText, setReadingTime, clearSessionData, clearInputData } = useSession()
+  const { state, setSource, setText, setReadingTime, clearSessionData } = useSession()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
-
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [dragActive, setDragActive] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [text, setTextState] = useState('')
-  const [showClearDialog, setShowClearDialog] = useState(false)
-  const [showClearInputDialog, setShowClearInputDialog] = useState(false)
-
-  const wordCount = countWords(text)
-  const readingTimeMinutes = calculateReadingTime(wordCount)
-  const readingTimeMs = readingTimeMinutes * 60 * 1000
+  const [characterCount, setCharacterCount] = useState(0)
 
   // Sync text state with session state
   useEffect(() => {
@@ -50,21 +29,61 @@ export default function InputStep() {
     }
   }, [state.text, text])
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+  // Update character count
+  useEffect(() => {
+    setCharacterCount(text.length)
+  }, [text])
 
-    if (file.type !== 'application/pdf') {
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      const scrollHeight = textarea.scrollHeight
+      const minHeight = 400
+      const maxHeight = 600
+      const newHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight))
+      textarea.style.height = `${newHeight}px`
+    }
+  }, [text])
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (file && file.type === 'application/pdf') {
+      await processFile(file)
+    } else {
       toast({
         title: 'Invalid file type',
         description: 'Please upload a PDF file.',
         variant: 'destructive',
       })
-      return
     }
+  }
 
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      await processFile(file)
+    }
+  }
+
+  const processFile = async (file: File) => {
     setIsProcessing(true)
     try {
       const extractedText = await extractTextFromPdf(file)
@@ -106,217 +125,120 @@ export default function InputStep() {
       clearSessionData()
     }
 
+    const readingTimeMinutes = calculateReadingTime(countWords(text))
+    const readingTimeMs = readingTimeMinutes * 60 * 1000
+
     setText(text)
     setReadingTime(readingTimeMs)
-    router.push('/read')
-  }
-
-  const handleClearForm = () => {
-    clearSessionData()
-    setTextState('')
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-    setShowClearDialog(false)
-    toast({
-      title: 'Form cleared',
-      description: 'All study material and quiz data have been cleared.',
-    })
-  }
-
-  const handleClearInput = () => {
-    clearInputData()
-    setTextState('')
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-    setShowClearInputDialog(false)
-    toast({
-      title: 'Input cleared',
-      description: 'Text/PDF input has been cleared. Quiz data remains intact.',
-    })
+    router.push('/study/read')
   }
 
   const canSubmit = text.trim() && !isProcessing
-  const hasContent = text.trim() || state.questions.length > 0
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2">
-          <BookOpen className="h-8 w-8" />
-          Cerebryx
-        </CardTitle>
-        <CardDescription className="text-center">
-          Upload a PDF or paste text to start your study session
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* File Upload */}
-        <div className="space-y-2">
-          <Label>Upload PDF</Label>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isProcessing}
-              className="flex-1"
+    <div className="w-full max-w-7xl mx-auto px-6 py-8 space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold">Prepare Your Study Content</h1>
+        <p className="text-lg text-muted-foreground">
+          Upload a PDF document or paste text to begin an AI-powered reading and quizzing session.
+        </p>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column: Upload Document */}
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-xl">Upload Document</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Drag & drop your PDF file here, or click to select a file.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Drag & Drop Area */}
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={`
+                relative border-2 border-dashed rounded-lg p-12 text-center transition-colors
+                ${dragActive ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}
+                ${isProcessing ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:border-primary/50'}
+              `}
+              onClick={() => !isProcessing && fileInputRef.current?.click()}
             >
-              <Upload className="h-4 w-4 mr-2" />
-              {isProcessing ? 'Processing...' : 'Choose PDF File'}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              onChange={handleFileUpload}
-              aria-label="Upload PDF"
-              title="Choose PDF File"
-              placeholder="Choose PDF File"
-              className="hidden"
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={handleFileUpload}
+                className="hidden"
+                aria-label="Upload PDF"
+              />
+              
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="flex flex-col items-center space-y-2">
+                  <ArrowUp className="h-12 w-12 text-primary" />
+                  <div className="h-0.5 w-16 bg-border"></div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-base font-medium">
+                    Drag &apos;n&apos; drop a PDF here, or click to select file
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Only PDF files are supported.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Best Practices Note */}
+            <p className="text-xs text-muted-foreground">
+              For best results, upload clean, text-searchable PDFs. Avoid scanned documents with poor resolution.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Right Column: Paste Text Content */}
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-xl">Paste Text Content</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Alternatively, paste any text content here to start your study session.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Text Area */}
+            <Textarea
+              ref={textareaRef}
+              placeholder="Paste your article, notes, or any text here..."
+              value={text}
+              onChange={(e) => handleTextChange(e.target.value)}
+              className="min-h-[400px] resize-y text-base overflow-y-auto"
+              style={{ minHeight: '400px' }}
             />
-          </div>
-        </div>
 
-        {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or</span>
-          </div>
-        </div>
+            {/* Character Count */}
+            <p className="text-sm text-muted-foreground">
+              Character count: {characterCount}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Text Input */}
-        <div className="space-y-2">
-          <Label htmlFor="text-input">Paste Text</Label>
-          <Textarea
-            id="text-input"
-            placeholder="Paste your study material here..."
-            value={text}
-            onChange={(e) => handleTextChange(e.target.value)}
-            className="min-h-[400px]"
-          />
-        </div>
-
-        {/* Clear Input Button */}
-        {text.trim() && (
-          <div className="flex justify-end">
-            <Button
-              onClick={() => setShowClearInputDialog(true)}
-              variant="outline"
-              size="sm"
-              disabled={isProcessing}
-              className="gap-2"
-            >
-              <Trash2 className="h-3 w-3" />
-              Clear Input
-            </Button>
-          </div>
-        )}
-
-        {/* Reading Time Preview */}
-        {text.trim() && (
-          <div className="flex items-center justify-center gap-2 p-4 bg-muted rounded-lg">
-            <Badge variant="secondary">{wordCount} words</Badge>
-            <span className="text-sm text-muted-foreground">
-              Estimated reading time: {formatTime(readingTimeMinutes * 60)}
-            </span>
-          </div>
-        )}
-
-        {/* Submit Button */}
+      {/* Submit Button */}
+      <div className="flex justify-center pt-4">
         <Button
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="w-full"
+          className="min-w-[300px] h-12 text-base font-semibold"
           size="lg"
         >
-          Start Study Session
+          Start Reading Session
         </Button>
-
-        {/* Clear Form Button */}
-        {hasContent && (
-          <Button
-            onClick={() => setShowClearDialog(true)}
-            variant="outline"
-            disabled={isProcessing}
-            className="w-full"
-            size="lg"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear Form
-          </Button>
-        )}
-      </CardContent>
-
-      {/* Clear Form Confirmation Dialog */}
-      <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
-              Clear Study Session?
-            </DialogTitle>
-            <DialogDescription>
-              This will clear all your entered text/PDF and quiz data. This action cannot be undone.
-              {state.questions.length > 0 && (
-                <div className="mt-2 p-2 bg-destructive/10 rounded text-destructive">
-                  You have {state.questions.length} questions and {state.answers.length} answers that will be lost.
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowClearDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleClearForm}
-            >
-              Clear Everything
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Clear Input Confirmation Dialog */}
-      <Dialog open={showClearInputDialog} onOpenChange={setShowClearInputDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
-              Clear Input Only?
-            </DialogTitle>
-            <DialogDescription>
-              This will clear your text/PDF input but keep any existing quiz data intact.
-              <div className="mt-2 p-2 bg-muted rounded text-sm">
-                Current input: {wordCount} words
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowClearInputDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleClearInput}
-            >
-              Clear Input
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+      </div>
+    </div>
   )
 }

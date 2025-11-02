@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import { Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from '@/providers/SessionProvider'
+import { AuthProvider } from '@/providers/AuthProvider'
+import { ClarityProvider } from '@/providers/ClarityProvider'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import { Toaster } from '@/components/ui/toaster'
-import Navigation from '@/components/Navigation'
+import AppLayout from '@/components/AppLayout'
 import SetupWrapper from '@/components/setup/SetupWrapper'
-import Link from 'next/link'
-import CerebryxLogo from '@/components/branding/CerebryxLogo'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -32,22 +32,24 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} font-sans`}
         suppressHydrationWarning={true}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={true}
-        >
-          <SessionProvider>
-            <SetupWrapper>
-              <div className="min-h-screen bg-background text-foreground">
-                <Navigation />
-                <div className="container mx-auto px-4 py-8 max-w-4xl">{children}</div>
-              </div>
-            </SetupWrapper>
-            <Toaster />
-          </SessionProvider>
-        </ThemeProvider>
+        <ClarityProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={true}
+          >
+            <AuthProvider>
+              <SessionProvider>
+                <SetupWrapper>
+                  <AppLayout>{children}</AppLayout>
+                </SetupWrapper>
+                <Toaster />
+              </SessionProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </ClarityProvider>
       </body>
     </html>
   )
 }
+
