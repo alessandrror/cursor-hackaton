@@ -159,8 +159,8 @@ export default function InputStep() {
     <div className="w-full max-w-7xl mx-auto px-6 py-8 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold">Prepare Your Study Content</h1>
-        <p className="text-lg text-muted-foreground">
+        <h1 className="text-4xl font-bold text-center md:text-start">Prepare Your Study Content</h1>
+        <p className="text-lg text-muted-foreground text-center md:text-start">
           Upload a PDF document or paste text to begin an AI-powered reading and
           quizzing session.
         </p>

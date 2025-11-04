@@ -31,16 +31,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="h-screen bg-background text-foreground overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
       <Navbar isCollapsed={isCollapsed} />
       <main
         className={cn(
           'h-full flex flex-col transition-all duration-300',
-          isCollapsed ? 'ml-16' : 'ml-64'
+          isCollapsed ? 'ml-0 md:ml-16' : 'ml-0 md:ml-64'
         )}
       >
-        <div className="flex-1 overflow-y-auto pt-16">{children}</div>
+        <div className="flex-1 pt-16">{children}</div>
       </main>
     </div>
   )

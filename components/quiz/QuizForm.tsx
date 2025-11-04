@@ -38,7 +38,7 @@ import { Progress } from '@/components/ui/progress'
 import { useSession } from '@/providers/SessionProvider'
 import { Question } from '@/types/session'
 import { useToast } from '@/hooks/use-toast'
-import QuizSkeleton from './QuizSkeleton'
+import { QuizSkeletonPage, QuizSkeletonQuestion } from './QuizSkeleton'
 import { cn } from '@/lib/utils'
 
 export default function QuizForm() {
@@ -415,6 +415,49 @@ export default function QuizForm() {
     }, 100)
   }
 
+  // Calculate which page numbers to show (exactly 3 numbers with ellipsis)
+  const getPageNumbers = (): Array<{
+    page: number
+    type: 'number' | 'ellipsis'
+  }> => {
+    if (totalPages <= 3) {
+      // Show all pages if 3 or less
+      return Array.from({ length: totalPages }, (_, i) => ({
+        page: i,
+        type: 'number' as const,
+      }))
+    }
+
+    const pages: Array<{ page: number; type: 'number' | 'ellipsis' }> = []
+
+    if (currentPage <= 1) {
+      // At the beginning: show 1, 2, 3, ...
+      pages.push({ page: 0, type: 'number' })
+      pages.push({ page: 1, type: 'number' })
+      pages.push({ page: 2, type: 'number' })
+      if (totalPages > 3) {
+        pages.push({ page: -1, type: 'ellipsis' })
+      }
+    } else if (currentPage >= totalPages - 2) {
+      // At the end: show ..., last-2, last-1, last
+      if (totalPages > 3) {
+        pages.push({ page: -1, type: 'ellipsis' })
+      }
+      pages.push({ page: totalPages - 3, type: 'number' })
+      pages.push({ page: totalPages - 2, type: 'number' })
+      pages.push({ page: totalPages - 1, type: 'number' })
+    } else {
+      // In the middle: show ..., current-1, current, current+1, ...
+      pages.push({ page: -1, type: 'ellipsis' })
+      pages.push({ page: currentPage - 1, type: 'number' })
+      pages.push({ page: currentPage, type: 'number' })
+      pages.push({ page: currentPage + 1, type: 'number' })
+      pages.push({ page: -1, type: 'ellipsis' })
+    }
+
+    return pages
+  }
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
@@ -431,7 +474,7 @@ export default function QuizForm() {
   if (isGenerating && state.questions.length === 0) {
     const currentRange = state.questionRange || { min: 10, max: 20 }
     const avgQuestions = Math.round((currentRange.min + currentRange.max) / 2)
-    return <QuizSkeleton questionCount={avgQuestions} />
+    return <QuizSkeletonPage questionCount={avgQuestions} />
   }
 
   if (state.questions.length === 0) {
@@ -634,22 +677,24 @@ export default function QuizForm() {
   return (
     <section className="flex h-full w-full">
       {/* Left Sidebar - Question Navigator */}
-      <aside className="w-64 fixed h-full border-t border-r bg-card flex-shrink-0 overflow-y-auto">
-        <div className="p-4 space-y-4">
+      <aside className="w-28 md:w-64 fixed h-full border-t border-r bg-card flex-shrink-0 overflow-y-auto">
+        <div className="px-2 py-4 md:px-4 space-y-4">
           <div>
-            <h3 className="text-sm font-semibold mb-3">Review your answers</h3>
+            <h3 className="text-sm md:text-base font-semibold mb-3">
+              Review your answers
+            </h3>
             <div className="space-y-2 text-sm">
-              <div className="text-muted-foreground">
+              <div className="text-muted-foreground text-xs md:text-base">
                 Answered: {answeredCount}
               </div>
-              <div className="text-muted-foreground">
+              <div className="text-muted-foreground text-xs md:text-base">
                 Unanswered: {unansweredCount}
               </div>
             </div>
           </div>
 
           <div>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(1.5rem,1fr))] md:grid-cols-[repeat(auto-fill,minmax(2rem,1fr))] gap-2">
               {Array.from(
                 { length: totalQuestions || allQuestions.length },
                 (_, index) => {
@@ -664,7 +709,7 @@ export default function QuizForm() {
                       key={question?.id || `question-${index}`}
                       onClick={() => handleQuestionClick(index)}
                       className={cn(
-                        'h-8 w-8 rounded text-xs font-medium transition-colors',
+                        'size-6 md:size-8 rounded text-xs font-medium transition-colors',
                         hasAnswer
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-muted-foreground hover:bg-muted/80',
@@ -683,14 +728,16 @@ export default function QuizForm() {
       </aside>
 
       {/* Main Content Area */}
-      <article className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+      <article className="flex-1 overflow-y-auto ml-28 md:ml-64">
+        <div className="max-w-7xl mx-auto px-2 md:px-6 py-6">
           {/* Header */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col md:flex-row items-center md:justify-between mb-4">
               <div>
-                <h1 className="text-2xl font-bold">AI Fundamentals Quiz</h1>
-                <p className="text-muted-foreground mt-1">
+                <h1 className="text-2xl font-bold text-center md:text-start">
+                  AI Fundamentals Quiz
+                </h1>
+                <p className="text-muted-foreground mt-1 text-center md:text-start mb-4 md:mb-0">
                   Progress: {answeredCount} of{' '}
                   {totalQuestions || allQuestions.length}
                 </p>
@@ -723,7 +770,7 @@ export default function QuizForm() {
 
           {/* Questions - Single Column Layout */}
           {isPageLoading ? (
-            <QuizSkeleton questionCount={itemsPerPage} />
+            <QuizSkeletonQuestion questionCount={itemsPerPage} />
           ) : (
             <div className="space-y-6">
               {paginatedQuestions.map((question, pageIndex) => {
@@ -737,35 +784,69 @@ export default function QuizForm() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-8 pt-6 border-t">
               <Button
+                size="icon"
                 variant="outline"
+                className="md:hidden mr-2 px-2"
                 onClick={handlePreviousPage}
                 disabled={currentPage === 0 || isPageLoading}
               >
-                <ChevronLeft className="h-4 w-4 mr-2" />
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="hidden md:inline-flex"
+                onClick={handlePreviousPage}
+                disabled={currentPage === 0 || isPageLoading}
+              >
+                <ChevronLeft />
                 Previous Page
               </Button>
 
-              <div className="flex gap-2">
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <Button
-                    key={i}
-                    variant={currentPage === i ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCurrentPage(i)}
-                    disabled={isPageLoading}
-                  >
-                    {i + 1}
-                  </Button>
-                ))}
+              <div className="flex gap-2 items-center">
+                {getPageNumbers().map((item, idx) => {
+                  if (item.type === 'ellipsis') {
+                    return (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 text-muted-foreground"
+                      >
+                        ...
+                      </span>
+                    )
+                  }
+                  return (
+                    <Button
+                      key={item.page}
+                      size="sm"
+                      variant={
+                        currentPage === item.page ? 'default' : 'outline'
+                      }
+                      onClick={() => setCurrentPage(item.page)}
+                      disabled={isPageLoading}
+                    >
+                      {item.page + 1}
+                    </Button>
+                  )
+                })}
               </div>
 
               <Button
+                size="icon"
                 variant="outline"
+                className="md:hidden ml-2 px-2"
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages - 1 || isPageLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="hidden md:inline-flex"
                 onClick={handleNextPage}
                 disabled={currentPage >= totalPages - 1 || isPageLoading}
               >
                 Next Page
-                <ChevronRight className="h-4 w-4 ml-2" />
+                <ChevronRight />
               </Button>
             </div>
           )}

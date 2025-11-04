@@ -159,7 +159,7 @@ export default function Reader() {
         </CardHeader>
         <CardContent>
           <div className="prose prose-invert max-w-none">
-            <div className="whitespace-pre-wrap break-words leading-relaxed text-base p-6 bg-muted/30 rounded-lg border border-border/50">
+            <div className="whitespace-pre-wrap break-words leading-relaxed text-sm md:text-base p-6 bg-muted/30 rounded-lg border border-border/50">
               {state.text}
             </div>
           </div>
