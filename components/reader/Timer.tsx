@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
-import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useRef, useState, useEffect, MutableRefObject } from 'react'
 import { formatTime, cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 
 interface TimerProps {
+  staticTimerRef: MutableRefObject<HTMLDivElement | null>
   initialTimeMs: number
   onTimeUp: () => void
   onTimeChange: (timeMs: number) => void
@@ -18,6 +19,7 @@ interface TimerProps {
 }
 
 export default function Timer({
+  staticTimerRef,
   initialTimeMs,
   onTimeUp,
   onTimeChange,
@@ -31,37 +33,85 @@ export default function Timer({
     timeRemainingMs || initialTimeMs
   )
   const lastReportedTime = useRef(displayTime)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const onTimeUpRef = useRef(onTimeUp)
+  const onStateChangeRef = useRef(onStateChange)
   const [isFloating, setIsFloating] = useState(false)
 
+  // Keep refs in sync with latest callbacks
   useEffect(() => {
-    setDisplayTime(timeRemainingMs || initialTimeMs)
-  }, [timeRemainingMs, initialTimeMs])
+    onTimeUpRef.current = onTimeUp
+    onStateChangeRef.current = onStateChange
+  }, [onTimeUp, onStateChange])
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-
-    if (timerState === 'running') {
-      interval = setInterval(() => {
-        setDisplayTime((prev) => {
-          if (prev <= 0) {
-            // Use setTimeout to defer the state updates to the next tick
-            setTimeout(() => {
-              onTimeUp()
-              onStateChange('finished')
-            }, 0)
-            return 0
-          }
-
-          const newTime = prev - 1000
-          return newTime
-        })
-      }, 1000)
+    // Only update displayTime if timer is not finished
+    // If finished, keep it at 0
+    if (timerState !== 'finished') {
+      setDisplayTime(timeRemainingMs || initialTimeMs)
     }
+  }, [timeRemainingMs, initialTimeMs, timerState])
+
+  useEffect(() => {
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+
+    // Don't start timer if already finished or not running
+    if (timerState !== 'running') {
+      return
+    }
+
+    // Prevent starting if already at or below 0
+    if (displayTime <= 0) {
+      onStateChangeRef.current('finished')
+      onTimeUpRef.current()
+      return
+    }
+
+    intervalRef.current = setInterval(() => {
+      setDisplayTime((prev) => {
+        // If already at or below 0, stop immediately
+        if (prev <= 0) {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+          }
+          // Use setTimeout to ensure state updates happen after interval cleanup
+          setTimeout(() => {
+            onStateChangeRef.current('finished')
+            onTimeUpRef.current()
+          }, 0)
+          return 0
+        }
+
+        const newTime = prev - 1000
+        // If we're about to go below 0, stop at 0
+        if (newTime <= 0) {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+          }
+          // Use setTimeout to ensure state updates happen after interval cleanup
+          setTimeout(() => {
+            onStateChangeRef.current('finished')
+            onTimeUpRef.current()
+          }, 0)
+          return 0
+        }
+        return newTime
+      })
+    }, 1000)
 
     return () => {
-      if (interval) clearInterval(interval)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
     }
-  }, [timerState, onTimeUp, onStateChange])
+  }, [timerState])
 
   // Update parent when displayTime changes (but only if it actually changed)
   useEffect(() => {
@@ -71,30 +121,26 @@ export default function Timer({
     }
   }, [displayTime, onTimeChange])
 
-  // Collapse and float when scrolling beyond 30% of viewport height
+  // Show floating timer when static timer is out of view using IntersectionObserver
   useEffect(() => {
-    const threshold = window.innerHeight * 0.3
-    let last = false
-    let raf = 0
+    const staticTimer = staticTimerRef.current
+    if (!staticTimer) return
 
-    const onScroll = () => {
-      if (raf) return
-      raf = requestAnimationFrame(() => {
-        raf = 0
-        const next = window.scrollY > threshold
-        if (next !== last) {
-          last = next
-          setIsFloating(next)
-        }
-      })
-    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        setIsFloating(!entry.isIntersecting)
+      },
+      {
+        threshold: 0.0,
+        rootMargin: '-64px 0px 0px 0px',
+      }
+    )
 
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
+    observer.observe(staticTimer)
 
     return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (raf) cancelAnimationFrame(raf)
+      observer.disconnect()
     }
   }, [])
 
@@ -116,30 +162,24 @@ export default function Timer({
   const isFinished = timerState === 'finished'
   const isIdle = timerState === 'idle'
 
-  return (
-    <div
-      className={cn(
-        'flex flex-col items-center space-y-4 transition-all duration-300 ease-in',
-        isFloating
-          ? 'fixed top-4 right-4 z-50 w-auto rounded-lg border bg-background/80 backdrop-blur px-3 py-2 shadow-lg'
-          : 'static'
-      )}
-    >
+  // Render timer content (reusable for both static and floating)
+  const renderTimerContent = (isCompact: boolean) => (
+    <div className="flex flex-col items-center space-y-4">
       <div className="text-center">
         <div
           className={cn(
-            'font-mono font-bold mb-3 transition-all duration-300 ease-in',
-            isFloating ? 'text-4xl' : 'text-7xl'
+            'font-mono font-bold mb-3',
+            isCompact ? 'text-xl sm:text-4xl' : 'text-7xl'
           )}
         >
           {formatTime(Math.ceil(displayTime / 1000))}
         </div>
-        {!isFloating && (
+        {!isCompact && (
           <Badge
             variant={
               isFinished ? 'destructive' : isRunning ? 'default' : 'secondary'
             }
-            className="text-sm px-3 py-1"
+            className="text-sm px-3 py-1 !transition-none !duration-0"
           >
             {isFinished
               ? "Time's Up!"
@@ -152,7 +192,7 @@ export default function Timer({
         )}
       </div>
 
-      {isFloating ? (
+      {isCompact ? (
         <div className="flex gap-2">
           {isIdle && (
             <Button onClick={handleStart} size="icon" aria-label="Start">
@@ -201,60 +241,76 @@ export default function Timer({
           </Button>
         </div>
       ) : (
-        <div className="flex gap-2">
-          {isIdle && (
-            <Button onClick={handleStart} size="lg" className="gap-2">
-              <Play className="h-4 w-4" />
-              Start
-            </Button>
-          )}
+        <>
+          <div className="flex gap-2">
+            {isIdle && (
+              <Button onClick={handleStart} size="lg" className="gap-2">
+                <Play className="h-4 w-4" />
+                Start
+              </Button>
+            )}
 
-          {isRunning && (
+            {isRunning && (
+              <Button
+                onClick={handlePause}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <Pause className="h-4 w-4" />
+                Pause
+              </Button>
+            )}
+
+            {timerState === 'paused' && (
+              <Button onClick={handleStart} size="lg" className="gap-2">
+                <Play className="h-4 w-4" />
+                Resume
+              </Button>
+            )}
+
             <Button
-              onClick={handlePause}
+              onClick={handleReset}
               variant="outline"
               size="lg"
               className="gap-2"
             >
-              <Pause className="h-4 w-4" />
-              Pause
+              <RotateCcw className="h-4 w-4" />
+              Reset
             </Button>
-          )}
-
-          {timerState === 'paused' && (
-            <Button onClick={handleStart} size="lg" className="gap-2">
-              <Play className="h-4 w-4" />
-              Resume
-            </Button>
-          )}
+          </div>
 
           <Button
-            onClick={handleReset}
-            variant="outline"
+            onClick={onToggleMute}
+            variant="ghost"
             size="lg"
             className="gap-2"
+            title={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
           >
-            <RotateCcw className="h-4 w-4" />
-            Reset
+            {isMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
           </Button>
-        </div>
-      )}
-
-      {!isFloating && (
-        <Button
-          onClick={onToggleMute}
-          variant="ghost"
-          size="lg"
-          className="gap-2"
-          title={isMuted ? 'Unmute ringtone' : 'Mute ringtone'}
-        >
-          {isMuted ? (
-            <VolumeX className="h-4 w-4" />
-          ) : (
-            <Volume2 className="h-4 w-4" />
-          )}
-        </Button>
+        </>
       )}
     </div>
+  )
+
+  return (
+    <>
+      {/* Static Timer - Always visible */}
+      <div className="static w-full flex flex-col items-center space-y-4">
+        {renderTimerContent(false)}
+      </div>
+
+      {/* Floating Timer - Conditionally rendered when scrolling */}
+      {isFloating && (
+        <div className="fixed top-12 right-2 z-50 w-auto rounded-lg border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-3 py-2 shadow-lg">
+          {renderTimerContent(true)}
+        </div>
+      )}
+    </>
   )
 }

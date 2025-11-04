@@ -2,11 +2,24 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, Settings, LayoutDashboard } from 'lucide-react'
+import {
+  BookOpen,
+  Settings,
+  LayoutDashboard,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useSidebar } from '@/contexts/SidebarContext'
 
-export default function Sidebar() {
+export default function Sidebar({
+  isCollapsed,
+  toggleSidebar,
+}: {
+  isCollapsed: boolean
+  toggleSidebar: () => void
+}) {
   const pathname = usePathname()
 
   const isActive = (path: string) => {
@@ -23,31 +36,67 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-card overflow-y-auto">
+    <aside
+      className={cn(
+        'fixed left-0 top-0 z-40 h-screen border-r bg-card overflow-y-auto transition-[width] duration-300 overflow-x-hidden',
+        isCollapsed ? 'w-16' : 'w-64'
+      )}
+    >
       <div className="flex h-full flex-col">
+        {/* Toggle Button */}
+        <div className="flex items-center border-b">
+          <div className="flex px-4 py-3.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="w-8 gap-3"
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-5 w-5 flex-shrink-0" />
+              ) : (
+                <ChevronLeft className="h-5 w-5 flex-shrink-0" />
+              )}
+            </Button>
+          </div>
+        </div>
+
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-4">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.href)
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={active ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start gap-3',
-                    active && 'bg-secondary font-semibold'
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
-                </Button>
-              </Link>
-            )
-          })}
+        <nav className="flex h-full">
+          <div className="flex flex-col gap-y-2 px-4 py-3.5 w-full">
+            {menuItems.map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.href)
+              return (
+                <Link key={item.href} href={item.href} className="w-full">
+                  <Button
+                    variant={active ? 'secondary' : 'ghost'}
+                    className={cn(
+                      'gap-3 !justify-start !px-2.5 transition-[max-width] duration-200 min-w-9 w-auto',
+                      isCollapsed ? '!max-w-9 w-auto' : '!max-w-full w-full',
+                      active && 'bg-secondary font-semibold'
+                    )}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span
+                      className={cn(
+                        'transition-[opacity,max-width,overflow] duration-200 overflow-hidden whitespace-nowrap',
+                        isCollapsed
+                          ? 'max-w-0 opacity-0'
+                          : 'max-w-xs opacity-100'
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </Button>
+                </Link>
+              )
+            })}
+          </div>
         </nav>
       </div>
     </aside>
   )
 }
-

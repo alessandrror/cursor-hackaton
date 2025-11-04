@@ -187,6 +187,24 @@ export default function SettingsView() {
   const { toast } = useToast()
   const { state, setQuestionRange } = useSession()
 
+  const handleBack = () => {
+    // Try to go back, but if no history or would go to external site, use smart fallback
+    if (window.history.length > 1) {
+      const referrer = document.referrer
+      // Check if referrer is from same origin
+      if (referrer && referrer.startsWith(window.location.origin)) {
+        router.back()
+        return
+      }
+    }
+    // Fallback: go to dashboard if available, otherwise study
+    if (state.text || state.questions.length > 0) {
+      router.push('/study')
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
   const handleToggleHistory = (enabled: boolean) => {
     updateSettings({ enabled })
     toast({
@@ -237,7 +255,7 @@ export default function SettingsView() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push('/')}
+          onClick={handleBack}
           className="h-10 w-10"
         >
           <ArrowLeft className="h-5 w-5" />

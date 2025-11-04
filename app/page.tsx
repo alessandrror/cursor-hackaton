@@ -127,7 +127,7 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-24">
         <Card className="max-w-4xl mx-auto border-2 bg-gradient-to-br from-card to-card/50">
-          <CardContent className="p-12 text-center">
+          <CardContent className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Ready to Transform Your Reading?
             </h2>

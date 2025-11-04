@@ -13,8 +13,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/providers/AuthProvider'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { cn } from '@/lib/utils'
 
-export default function Navbar() {
+export default function Navbar({ isCollapsed }: { isCollapsed: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, signOut } = useAuth()
@@ -30,11 +32,18 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
-      <div className="flex h-16 items-center justify-between px-6">
+    <header
+      className={cn(
+        'fixed top-0 right-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 transition-[left] duration-300',
+        isCollapsed
+          ? 'left-16'
+          : 'left-64'
+      )}
+    >
+      <nav className="flex h-16 items-center justify-between px-6 w-full">
         <div className="flex items-center gap-4">
-          <Link 
-            href="/dashboard" 
+          <Link
+            href="/"
             className="text-xl font-bold transition-opacity hover:opacity-80"
           >
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -43,10 +52,18 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
+            <DropdownMenuTrigger
+              asChild
+              className="!transition-none !duration-0"
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 !transition-none !duration-0"
+              >
                 <User className="h-4 w-4" />
                 Account
               </Button>
@@ -72,8 +89,7 @@ export default function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   )
 }
-

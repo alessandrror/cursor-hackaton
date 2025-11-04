@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { BookOpen, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function LandingNavbar() {
   return (
@@ -19,6 +20,7 @@ export default function LandingNavbar() {
         </Link>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link href="/study">
             <Button variant="ghost" size="sm">
               Get Started

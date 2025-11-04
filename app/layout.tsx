@@ -5,6 +5,7 @@ import { SessionProvider } from '@/providers/SessionProvider'
 import { AuthProvider } from '@/providers/AuthProvider'
 import { ClarityProvider } from '@/providers/ClarityProvider'
 import { ThemeProvider } from '@/providers/ThemeProvider'
+import { SidebarProvider } from '@/contexts/SidebarContext'
 import { Toaster } from '@/components/ui/toaster'
 import AppLayout from '@/components/AppLayout'
 import SetupWrapper from '@/components/setup/SetupWrapper'
@@ -36,14 +37,16 @@ export default function RootLayout({
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
-            enableSystem={true}
+            enableSystem={false}
           >
             <AuthProvider>
               <SessionProvider>
-                <SetupWrapper>
-                  <AppLayout>{children}</AppLayout>
-                </SetupWrapper>
-                <Toaster />
+                <SidebarProvider>
+                  <SetupWrapper>
+                    <AppLayout>{children}</AppLayout>
+                  </SetupWrapper>
+                  <Toaster />
+                </SidebarProvider>
               </SessionProvider>
             </AuthProvider>
           </ThemeProvider>

@@ -13,7 +13,15 @@ import { useToast } from '@/hooks/use-toast'
 
 export default function InputStep() {
   const router = useRouter()
-  const { state, setSource, setText, setReadingTime, clearSessionData } = useSession()
+  const {
+    state,
+    setSource,
+    setText,
+    setReadingTime,
+    clearSessionData,
+    setTimerState,
+    setTimeRemaining,
+  } = useSession()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -22,12 +30,17 @@ export default function InputStep() {
   const [text, setTextState] = useState('')
   const [characterCount, setCharacterCount] = useState(0)
 
-  // Sync text state with session state
+  // Sync text state with session state, but allow clearing
   useEffect(() => {
-    if (state.text && state.text !== text) {
+    // If session text is cleared, clear local text too
+    if (!state.text && text) {
+      setTextState('')
+    }
+    // Only sync from session if local text is empty (to allow manual editing)
+    else if (state.text && text === '') {
       setTextState(state.text)
     }
-  }, [state.text, text])
+  }, [state.text])
 
   // Update character count
   useEffect(() => {
@@ -107,7 +120,10 @@ export default function InputStep() {
 
   const handleTextChange = (value: string) => {
     setTextState(value)
-    setSource('text')
+    // Only set source if there's actual text
+    if (value.trim()) {
+      setSource('text')
+    }
   }
 
   const handleSubmit = () => {
@@ -130,6 +146,10 @@ export default function InputStep() {
 
     setText(text)
     setReadingTime(readingTimeMs)
+    setTextState('')
+    // Reset timer state when new text is submitted
+    setTimerState('idle')
+    setTimeRemaining(readingTimeMs)
     router.push('/study/read')
   }
 
@@ -141,7 +161,8 @@ export default function InputStep() {
       <div className="space-y-2">
         <h1 className="text-4xl font-bold">Prepare Your Study Content</h1>
         <p className="text-lg text-muted-foreground">
-          Upload a PDF document or paste text to begin an AI-powered reading and quizzing session.
+          Upload a PDF document or paste text to begin an AI-powered reading and
+          quizzing session.
         </p>
       </div>
 
@@ -163,7 +184,7 @@ export default function InputStep() {
               onDragOver={handleDrag}
               onDrop={handleDrop}
               className={`
-                relative border-2 border-dashed rounded-lg p-12 text-center transition-colors
+                relative border-2 border-dashed rounded-lg p-12 text-center
                 ${dragActive ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}
                 ${isProcessing ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:border-primary/50'}
               `}
@@ -177,7 +198,7 @@ export default function InputStep() {
                 className="hidden"
                 aria-label="Upload PDF"
               />
-              
+
               <div className="flex flex-col items-center justify-center space-y-4">
                 <div className="flex flex-col items-center space-y-2">
                   <ArrowUp className="h-12 w-12 text-primary" />
@@ -196,7 +217,8 @@ export default function InputStep() {
 
             {/* Best Practices Note */}
             <p className="text-xs text-muted-foreground">
-              For best results, upload clean, text-searchable PDFs. Avoid scanned documents with poor resolution.
+              For best results, upload clean, text-searchable PDFs. Avoid
+              scanned documents with poor resolution.
             </p>
           </CardContent>
         </Card>
@@ -206,7 +228,8 @@ export default function InputStep() {
           <CardHeader>
             <CardTitle className="text-xl">Paste Text Content</CardTitle>
             <p className="text-sm text-muted-foreground mt-2">
-              Alternatively, paste any text content here to start your study session.
+              Alternatively, paste any text content here to start your study
+              session.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">

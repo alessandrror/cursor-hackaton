@@ -47,31 +47,31 @@ import { cn } from '@/lib/utils'
 // Normalize true/false answers across languages
 function normalizeTrueFalseAnswer(answer: string): 'true' | 'false' | null {
   const normalized = answer.toLowerCase().trim()
-  
+
   // English
   if (normalized === 'true') return 'true'
   if (normalized === 'false') return 'false'
-  
+
   // Spanish
   if (normalized === 'verdadero') return 'true'
   if (normalized === 'falso') return 'false'
-  
+
   // French
   if (normalized === 'vrai') return 'true'
   if (normalized === 'faux') return 'false'
-  
+
   // German
   if (normalized === 'wahr') return 'true'
   if (normalized === 'falsch') return 'false'
-  
+
   // Italian
   if (normalized === 'vero') return 'true'
   if (normalized === 'falso') return 'false'
-  
+
   // Portuguese
   if (normalized === 'verdadeiro') return 'true'
   if (normalized === 'falso') return 'false'
-  
+
   return null
 }
 
@@ -88,59 +88,81 @@ type FilterType = 'all' | 'incorrect' | 'flagged'
 
 export default function ResultsView() {
   const router = useRouter()
-  const { state, resetSession, setQuestions, clearAnswers, forceRegenerate } =
-    useSession()
+  const {
+    state,
+    resetSession,
+    setQuestions,
+    clearAnswers,
+    forceRegenerate,
+    setTimerState,
+    setTimeRemaining,
+  } = useSession()
   const { addEntry, settings } = useHistory()
   const { toast } = useToast()
   const [showRetakeDialog, setShowRetakeDialog] = useState(false)
   const [hasSaved, setHasSaved] = useState(false)
   const [hasShownHistoryNotice, setHasShownHistoryNotice] = useState(false)
-  const [questionAnalyses, setQuestionAnalyses] = useState<Map<string, QuestionAnalysis>>(
-    new Map()
-  )
+  const [questionAnalyses, setQuestionAnalyses] = useState<
+    Map<string, QuestionAnalysis>
+  >(new Map())
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [filter, setFilter] = useState<FilterType>('all')
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set())
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(
+    new Set()
+  )
   const itemsPerPage = 10
   const analysesRef = useRef<Map<string, QuestionAnalysis>>(new Map())
 
   const results = calculateScore(state.questions, state.answers)
 
   // Calculate question correctness for all questions
-  const getQuestionCorrectness = useCallback((questionId: string) => {
-    const question = state.questions.find(q => q.id === questionId)
-    if (!question) return false
+  const getQuestionCorrectness = useCallback(
+    (questionId: string) => {
+      const question = state.questions.find((q) => q.id === questionId)
+      if (!question) return false
 
-    const userAnswer = state.answers.find(a => a.questionId === questionId)
-    const analysis = questionAnalyses.get(questionId)
+      const userAnswer = state.answers.find((a) => a.questionId === questionId)
+      const analysis = questionAnalyses.get(questionId)
 
-    if (question.type === 'short-answer' && analysis?.isAnalyzed) {
-      return analysis.isCorrect
-    } else if (question.type === 'true-false') {
-      const userNormalized = normalizeTrueFalseAnswer(userAnswer?.answer || '')
-      const correctNormalized = normalizeTrueFalseAnswer(question.correctAnswer)
-      if (userNormalized && correctNormalized) {
-        return userNormalized === correctNormalized
+      if (question.type === 'short-answer' && analysis?.isAnalyzed) {
+        return analysis.isCorrect
+      } else if (question.type === 'true-false') {
+        const userNormalized = normalizeTrueFalseAnswer(
+          userAnswer?.answer || ''
+        )
+        const correctNormalized = normalizeTrueFalseAnswer(
+          question.correctAnswer
+        )
+        if (userNormalized && correctNormalized) {
+          return userNormalized === correctNormalized
+        }
+        return (
+          userAnswer?.answer.toLowerCase().trim() ===
+          question.correctAnswer.toLowerCase().trim()
+        )
+      } else {
+        // For multiple choice/select, handle comma-separated answers
+        let userAns = userAnswer?.answer || ''
+
+        // If answer contains commas, it's a joined array - normalize it
+        if (userAns.includes(',')) {
+          const parts = userAns.split(',').map((s) => s.trim().toLowerCase())
+          const uniqueParts = Array.from(new Set(parts))
+          userAns = uniqueParts.join(', ')
+        }
+
+        return (
+          userAns.toLowerCase().trim() ===
+          question.correctAnswer.toLowerCase().trim()
+        )
       }
-      return userAnswer?.answer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
-    } else {
-      // For multiple choice/select, handle comma-separated answers
-      let userAns = userAnswer?.answer || ''
-      
-      // If answer contains commas, it's a joined array - normalize it
-      if (userAns.includes(',')) {
-        const parts = userAns.split(',').map(s => s.trim().toLowerCase())
-        const uniqueParts = Array.from(new Set(parts))
-        userAns = uniqueParts.join(', ')
-      }
-      
-      return userAns.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
-    }
-  }, [state.questions, state.answers, questionAnalyses])
+    },
+    [state.questions, state.answers, questionAnalyses]
+  )
 
   // Filter questions based on selected filter
-  const filteredQuestions = state.questions.filter(q => {
+  const filteredQuestions = state.questions.filter((q) => {
     if (filter === 'all') return true
     if (filter === 'incorrect') return !getQuestionCorrectness(q.id)
     if (filter === 'flagged') return false // No flagged questions for now
@@ -179,29 +201,32 @@ export default function ResultsView() {
         },
         reading: {
           estimatedSec: Math.floor(state.readingTimeMs / 1000),
-          actualSec: Math.floor((state.readingTimeMs - state.timeRemainingMs) / 1000),
+          actualSec: Math.floor(
+            (state.readingTimeMs - state.timeRemainingMs) / 1000
+          ),
           earlyStop: state.timerState !== 'finished',
         },
         quiz: {
           questionCount: state.questions.length,
           difficulty: {
-            easy: state.questions.filter(q => q.difficulty === 'easy').length,
-            medium: state.questions.filter(q => q.difficulty === 'medium').length,
-            hard: state.questions.filter(q => q.difficulty === 'hard').length,
+            easy: state.questions.filter((q) => q.difficulty === 'easy').length,
+            medium: state.questions.filter((q) => q.difficulty === 'medium')
+              .length,
+            hard: state.questions.filter((q) => q.difficulty === 'hard').length,
           },
-          answers: state.questions.map(q => {
-            const userAnswer = state.answers.find(a => a.questionId === q.id)
+          answers: state.questions.map((q) => {
+            const userAnswer = state.answers.find((a) => a.questionId === q.id)
             const isCorrect = getQuestionCorrectness(q.id)
             const pointsValue = difficultyPoints[q.difficulty] || 10
-            
+
             // Clean up repeated answers in user answer
             let cleanAnswer = userAnswer?.answer || ''
             if (cleanAnswer.includes(',')) {
-              const parts = cleanAnswer.split(',').map(s => s.trim())
+              const parts = cleanAnswer.split(',').map((s) => s.trim())
               const uniqueParts = Array.from(new Set(parts))
               cleanAnswer = uniqueParts.join(', ')
             }
-            
+
             return {
               questionId: q.id,
               type: q.type,
@@ -221,7 +246,7 @@ export default function ResultsView() {
 
       addEntry(entry)
       setHasSaved(true)
-      
+
       if (settings.enabled && !hasShownHistoryNotice) {
         toast({
           title: 'Session saved to history',
@@ -231,7 +256,16 @@ export default function ResultsView() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, results, hasSaved, hasShownHistoryNotice, settings.enabled, addEntry, toast, getQuestionCorrectness])
+  }, [
+    state,
+    results,
+    hasSaved,
+    hasShownHistoryNotice,
+    settings.enabled,
+    addEntry,
+    toast,
+    getQuestionCorrectness,
+  ])
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -244,11 +278,11 @@ export default function ResultsView() {
       const pageStart = (currentPage - 1) * itemsPerPage
       const pageEnd = pageStart + itemsPerPage
       const currentPageQuestions = filteredQuestions.slice(pageStart, pageEnd)
-      
+
       const openEndedQuestions = currentPageQuestions.filter(
         (q) => q.type === 'short-answer' && !analysesRef.current.has(q.id)
       )
-      
+
       if (openEndedQuestions.length === 0) {
         setIsAnalyzing(false)
         return
@@ -256,13 +290,13 @@ export default function ResultsView() {
 
       setIsAnalyzing(true)
       const newAnalyses = new Map(analysesRef.current)
-      
+
       await Promise.all(
         openEndedQuestions.map(async (question) => {
           const userAnswer = state.answers.find(
             (a) => a.questionId === question.id
           )
-          
+
           if (!userAnswer) {
             newAnalyses.set(question.id, {
               questionId: question.id,
@@ -318,12 +352,25 @@ export default function ResultsView() {
 
     analyzeQuestions()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filter, state.answers, state.questions.length, itemsPerPage, getQuestionCorrectness])
+  }, [
+    currentPage,
+    filter,
+    state.answers,
+    state.questions.length,
+    itemsPerPage,
+    getQuestionCorrectness,
+  ])
 
   // Calculate metrics
-  const correctCount = state.questions.filter(q => getQuestionCorrectness(q.id)).length
+  const correctCount = state.questions.filter((q) =>
+    getQuestionCorrectness(q.id)
+  ).length
   const incorrectCount = state.questions.length - correctCount
-  const difficultyPoints: Record<string, number> = { easy: 10, medium: 20, hard: 30 }
+  const difficultyPoints: Record<string, number> = {
+    easy: 10,
+    medium: 20,
+    hard: 30,
+  }
   const totalPossiblePoints = state.questions.reduce((sum, q) => {
     const points = difficultyPoints[q.difficulty] || 10
     return sum + points
@@ -333,11 +380,16 @@ export default function ResultsView() {
     const points = difficultyPoints[q.difficulty] || 10
     return sum + (isCorrect ? points : 0)
   }, 0)
-  
+
   // Calculate average time per question (simplified - using reading time / question count)
-  const avgTimePerQuestion = state.questions.length > 0 
-    ? Math.floor((state.readingTimeMs - state.timeRemainingMs) / state.questions.length / 1000)
-    : 0
+  const avgTimePerQuestion =
+    state.questions.length > 0
+      ? Math.floor(
+          (state.readingTimeMs - state.timeRemainingMs) /
+            state.questions.length /
+            1000
+        )
+      : 0
   const avgTimeMinutes = Math.floor(avgTimePerQuestion / 60)
   const avgTimeSeconds = avgTimePerQuestion % 60
 
@@ -352,6 +404,9 @@ export default function ResultsView() {
 
   const handleReuseQuiz = () => {
     clearAnswers()
+    // Reset timer state when retaking quiz
+    setTimerState('idle')
+    setTimeRemaining(state.readingTimeMs)
     setShowRetakeDialog(false)
     router.push('/study/quiz')
   }
@@ -360,6 +415,9 @@ export default function ResultsView() {
     setQuestions([])
     clearAnswers()
     forceRegenerate()
+    // Reset timer state when retaking quiz
+    setTimerState('idle')
+    setTimeRemaining(state.readingTimeMs)
     setShowRetakeDialog(false)
     router.push('/study/quiz')
   }
@@ -377,7 +435,7 @@ export default function ResultsView() {
   }
 
   const toggleQuestionExpanded = (questionId: string) => {
-    setExpandedQuestions(prev => {
+    setExpandedQuestions((prev) => {
       const next = new Set(prev)
       if (next.has(questionId)) {
         next.delete(questionId)
@@ -392,12 +450,14 @@ export default function ResultsView() {
     const question = state.questions[index]
     if (!question) return
 
-    const filteredIndex = filteredQuestions.findIndex(q => q.id === question.id)
+    const filteredIndex = filteredQuestions.findIndex(
+      (q) => q.id === question.id
+    )
     if (filteredIndex === -1) return
 
     const targetPage = Math.floor(filteredIndex / itemsPerPage) + 1
     setCurrentPage(targetPage)
-    
+
     // Scroll to question after page loads
     setTimeout(() => {
       const element = document.getElementById(`question-${question.id}`)
@@ -417,7 +477,9 @@ export default function ResultsView() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.push('/study')}>Start New Session</Button>
+            <Button onClick={() => router.push('/study')}>
+              Start New Session
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -440,29 +502,41 @@ export default function ResultsView() {
   return (
     <div className="flex h-full w-full">
       {/* Left Sidebar - Filters and Question List */}
-      <aside className="w-64 border-r bg-card flex-shrink-0 overflow-y-auto">
-        <div className="p-4 space-y-6">
+      <aside className="w-64 fixed h-full border-t border-r bg-card flex-shrink-0 overflow-y-auto">
+        <div className="p-4 space-y-4">
           <div>
-            <h3 className="text-sm font-semibold mb-4">Review your answers</h3>
-            
+            <h3 className="text-sm font-semibold mb-3">Review your answers</h3>
+
             {/* Filters */}
-            <RadioGroup value={filter} onValueChange={(value) => setFilter(value as FilterType)}>
-              <div className="space-y-3">
+            <RadioGroup
+              value={filter}
+              onValueChange={(value) => setFilter(value as FilterType)}
+            >
+              <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="all" id="filter-all" />
-                  <Label htmlFor="filter-all" className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor="filter-all"
+                    className="cursor-pointer text-sm"
+                  >
                     All Questions
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="incorrect" id="filter-incorrect" />
-                  <Label htmlFor="filter-incorrect" className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor="filter-incorrect"
+                    className="cursor-pointer text-sm"
+                  >
                     Incorrect Answers
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="flagged" id="filter-flagged" />
-                  <Label htmlFor="filter-flagged" className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor="filter-flagged"
+                    className="cursor-pointer text-sm"
+                  >
                     Flagged Questions
                   </Label>
                 </div>
@@ -471,8 +545,8 @@ export default function ResultsView() {
           </div>
 
           {/* Question List */}
-          <div>
-            <div className="space-y-2">
+          <div className="mt-4">
+            <div className="space-y-1.5">
               {state.questions.map((question, index) => {
                 const isCorrect = getQuestionCorrectness(question.id)
                 return (
@@ -481,7 +555,8 @@ export default function ResultsView() {
                     onClick={() => handleQuestionClick(index)}
                     className={cn(
                       'w-full flex items-start gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-left',
-                      paginatedQuestions.some(q => q.id === question.id) && 'bg-muted'
+                      paginatedQuestions.some((q) => q.id === question.id) &&
+                        'bg-muted'
                     )}
                   >
                     <div className="flex-shrink-0 mt-0.5">
@@ -496,11 +571,16 @@ export default function ResultsView() {
                         Question {index + 1}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge 
-                          variant="outline" 
-                          className={cn('text-xs', getDifficultyColor(question.difficulty), 'text-white border-0')}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-xs',
+                            getDifficultyColor(question.difficulty),
+                            'text-white border-0 !transition-none !duration-0'
+                          )}
                         >
-                          {question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)}
+                          {question.difficulty.charAt(0).toUpperCase() +
+                            question.difficulty.slice(1)}
                         </Badge>
                       </div>
                     </div>
@@ -513,7 +593,7 @@ export default function ResultsView() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto">
+      <article className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-6 py-6">
           {/* Header */}
           <div className="mb-6">
@@ -555,8 +635,8 @@ export default function ResultsView() {
                 <div className="text-sm text-muted-foreground mb-3">
                   Keep up the great work!
                 </div>
-                <Progress 
-                  value={(correctCount / state.questions.length) * 100} 
+                <Progress
+                  value={(correctCount / state.questions.length) * 100}
                   className="h-2"
                 />
               </CardContent>
@@ -577,8 +657,8 @@ export default function ResultsView() {
                 <div className="text-sm text-muted-foreground mb-3">
                   Areas for improvement identified
                 </div>
-                <Progress 
-                  value={(incorrectCount / state.questions.length) * 100} 
+                <Progress
+                  value={(incorrectCount / state.questions.length) * 100}
                   className="h-2"
                 />
               </CardContent>
@@ -607,7 +687,8 @@ export default function ResultsView() {
           <Card className="border-2 mb-6">
             <CardHeader>
               <CardTitle className="text-xl font-bold">
-                Review your answers, the correct solutions, and AI-powered feedback
+                Review your answers, the correct solutions, and AI-powered
+                feedback
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -615,20 +696,27 @@ export default function ResultsView() {
                 <div className="flex items-center justify-center py-8">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Brain className="h-5 w-5 animate-pulse text-primary" />
-                    <span className="text-base">Analyzing open-ended questions...</span>
+                    <span className="text-base">
+                      Analyzing open-ended questions...
+                    </span>
                   </div>
                 </div>
               )}
 
               <div className="space-y-4">
                 {paginatedQuestions.map((question) => {
-                  const globalIndex = state.questions.findIndex(q => q.id === question.id)
-                  const userAnswer = state.answers.find(a => a.questionId === question.id)
+                  const globalIndex = state.questions.findIndex(
+                    (q) => q.id === question.id
+                  )
+                  const userAnswer = state.answers.find(
+                    (a) => a.questionId === question.id
+                  )
                   const analysis = questionAnalyses.get(question.id)
                   const isCorrect = getQuestionCorrectness(question.id)
                   const isExpanded = expandedQuestions.has(question.id)
-                  
-                  const pointsValue = difficultyPoints[question.difficulty] || 10
+
+                  const pointsValue =
+                    difficultyPoints[question.difficulty] || 10
                   const points = isCorrect ? pointsValue : -pointsValue
 
                   return (
@@ -637,7 +725,9 @@ export default function ResultsView() {
                       id={`question-${question.id}`}
                       className={cn(
                         'border-2 transition-all',
-                        isCorrect ? 'border-green-500/50 bg-green-500/5' : 'border-red-500/50 bg-red-500/5'
+                        isCorrect
+                          ? 'border-green-500/50 bg-green-500/5'
+                          : 'border-red-500/50 bg-red-500/5'
                       )}
                     >
                       <CardContent className="pt-6">
@@ -655,30 +745,57 @@ export default function ResultsView() {
                                 <span className="font-bold text-lg">
                                   Question {globalIndex + 1}
                                 </span>
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn('text-xs', getDifficultyColor(question.difficulty), 'text-white border-0')}
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'text-xs',
+                                    getDifficultyColor(question.difficulty),
+                                    'text-white border-0 !transition-none !duration-0'
+                                  )}
                                 >
-                                  {question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)}
+                                  {question.difficulty.charAt(0).toUpperCase() +
+                                    question.difficulty.slice(1)}
                                 </Badge>
-                                <Badge variant={points > 0 ? 'default' : 'destructive'} className="text-xs">
-                                  {points > 0 ? '+' : ''}{points} points
+                                <Badge
+                                  variant={
+                                    points > 0 ? 'default' : 'destructive'
+                                  }
+                                  className="text-xs !transition-none !duration-0"
+                                >
+                                  {points > 0 ? '+' : ''}
+                                  {points} points
                                 </Badge>
                               </div>
-                              <p className="text-base font-medium">{question.question}</p>
-                              
+                              <p className="text-base font-medium">
+                                {question.question}
+                              </p>
+
                               {isExpanded && (
                                 <div className="space-y-3 pt-2">
                                   <div className="p-3 rounded-lg bg-muted/50">
-                                    <span className="font-semibold text-sm text-muted-foreground">Your answer: </span>
-                                    <span className={cn('text-base font-medium', isCorrect ? 'text-green-500' : 'text-red-500')}>
+                                    <span className="font-semibold text-sm text-muted-foreground">
+                                      Your answer:{' '}
+                                    </span>
+                                    <span
+                                      className={cn(
+                                        'text-base font-medium',
+                                        isCorrect
+                                          ? 'text-green-500'
+                                          : 'text-red-500'
+                                      )}
+                                    >
                                       {(() => {
-                                        const answer = userAnswer?.answer || 'No answer'
+                                        const answer =
+                                          userAnswer?.answer || 'No answer'
                                         // If answer contains commas, it might be a joined array - deduplicate
                                         if (answer.includes(',')) {
-                                          const parts = answer.split(',').map(s => s.trim())
+                                          const parts = answer
+                                            .split(',')
+                                            .map((s) => s.trim())
                                           // Remove duplicates while preserving order
-                                          const uniqueParts = Array.from(new Set(parts))
+                                          const uniqueParts = Array.from(
+                                            new Set(parts)
+                                          )
                                           return uniqueParts.join(', ')
                                         }
                                         return answer
@@ -697,17 +814,18 @@ export default function ResultsView() {
                                     </div>
                                   )}
 
-                                  {question.type === 'short-answer' && analysis?.isAnalyzed && (
-                                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                                      <div className="font-semibold text-sm mb-2 flex items-center gap-2">
-                                        <Brain className="h-4 w-4 text-primary" />
-                                        AI Analysis:
+                                  {question.type === 'short-answer' &&
+                                    analysis?.isAnalyzed && (
+                                      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                                        <div className="font-semibold text-sm mb-2 flex items-center gap-2">
+                                          <Brain className="h-4 w-4 text-primary" />
+                                          AI Analysis:
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                          {analysis.feedback}
+                                        </p>
                                       </div>
-                                      <p className="text-sm text-muted-foreground">
-                                        {analysis.feedback}
-                                      </p>
-                                    </div>
-                                  )}
+                                    )}
 
                                   {question.sourceQuote && (
                                     <div className="p-4 bg-secondary/10 border border-secondary/20 rounded-lg">
@@ -789,8 +907,8 @@ export default function ResultsView() {
               Start a New Study Session
               <ArrowRight className="h-5 w-5" />
             </Button>
-            <Button 
-              onClick={() => router.push('/dashboard')} 
+            <Button
+              onClick={() => router.push('/dashboard')}
               variant="outline"
               size="lg"
               className="gap-2"
@@ -799,7 +917,7 @@ export default function ResultsView() {
             </Button>
           </div>
         </div>
-      </div>
+      </article>
 
       {/* Retake Quiz Dialog */}
       <Dialog open={showRetakeDialog} onOpenChange={setShowRetakeDialog}>
@@ -818,14 +936,16 @@ export default function ResultsView() {
             <div className="space-y-2">
               <h4 className="font-medium">Reuse Same Questions</h4>
               <p className="text-sm text-muted-foreground">
-                Keep the current questions and just clear your answers. Good for practicing the same material.
+                Keep the current questions and just clear your answers. Good for
+                practicing the same material.
               </p>
             </div>
 
             <div className="space-y-2">
               <h4 className="font-medium">Generate New Questions</h4>
               <p className="text-sm text-muted-foreground">
-                Create completely new questions based on your study material. Fresh challenge!
+                Create completely new questions based on your study material.
+                Fresh challenge!
               </p>
             </div>
           </div>

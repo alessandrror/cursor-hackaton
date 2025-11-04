@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Home, Trash2, ChevronLeft, ChevronRight, Brain, CheckCircle2, AlertCircle } from 'lucide-react'
+import {
+  CheckCircle,
+  Home,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Brain,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -34,7 +43,14 @@ import { cn } from '@/lib/utils'
 
 export default function QuizForm() {
   const router = useRouter()
-  const { state, setQuestions, setAnswer, clearSessionData, clearAnswers, setQuestionRange } = useSession()
+  const {
+    state,
+    setQuestions,
+    setAnswer,
+    clearSessionData,
+    clearAnswers,
+    setQuestionRange,
+  } = useSession()
   const { toast } = useToast()
   const [isGenerating, setIsGenerating] = useState(false)
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
@@ -43,6 +59,10 @@ export default function QuizForm() {
   const [currentPage, setCurrentPage] = useState(0)
   const [totalQuestions, setTotalQuestions] = useState<number | null>(null)
   const [loadingPages, setLoadingPages] = useState<Set<number>>(new Set())
+  const [validationAttempted, setValidationAttempted] = useState(false)
+  const [unansweredQuestionIds, setUnansweredQuestionIds] = useState<
+    Set<string>
+  >(new Set())
   const loadingPagesRef = useRef<Set<number>>(new Set())
   const generatedPagesRef = useRef<Set<number>>(new Set())
   const questionsRef = useRef<Question[]>([])
@@ -57,7 +77,10 @@ export default function QuizForm() {
     text?: string
   ) => {
     // Prevent duplicate requests
-    if (generatedPagesRef.current.has(page) || loadingPagesRef.current.has(page)) {
+    if (
+      generatedPagesRef.current.has(page) ||
+      loadingPagesRef.current.has(page)
+    ) {
       return
     }
 
@@ -71,7 +94,7 @@ export default function QuizForm() {
       return next
     })
     setIsGenerating(true)
-    
+
     try {
       const range = questionRange || state.questionRange || { min: 10, max: 20 }
       const response = await fetch('/api/generate-questions', {
@@ -79,12 +102,12 @@ export default function QuizForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: textToUse,
           questionRange: range,
           page,
           itemsPerPage,
-          totalQuestions: totalCount
+          totalQuestions: totalCount,
         }),
       })
 
@@ -94,12 +117,14 @@ export default function QuizForm() {
       }
 
       const { questions: newQuestions } = await response.json()
-      
+
       if (newQuestions.length > 0) {
         const currentQuestions = questionsRef.current
         const existingIds = new Set(currentQuestions.map((q: Question) => q.id))
-        const uniqueNewQuestions = newQuestions.filter((q: Question) => !existingIds.has(q.id))
-        
+        const uniqueNewQuestions = newQuestions.filter(
+          (q: Question) => !existingIds.has(q.id)
+        )
+
         if (uniqueNewQuestions.length > 0) {
           setQuestions([...currentQuestions, ...uniqueNewQuestions])
           generatedPagesRef.current.add(page)
@@ -124,75 +149,84 @@ export default function QuizForm() {
     }
   }
 
-  // Auto-generate questions when text is available and no questions exist
+  // Auto-generate ALL questions when text is available and no questions exist
   useEffect(() => {
-    if (!state.text || state.questions.length > 0 || totalQuestions || isInitializingRef.current) {
+    if (
+      !state.text ||
+      state.questions.length > 0 ||
+      totalQuestions ||
+      isInitializingRef.current
+    ) {
       return
     }
-    
+
     const defaultRange = state.questionRange || { min: 10, max: 20 }
-    
+
     // Prevent multiple simultaneous initializations
     isInitializingRef.current = true
-    
+
     // Calculate total questions from range
     const range = defaultRange
-    const total = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min
-    
+    const total =
+      Math.floor(Math.random() * (range.max - range.min + 1)) + range.min
+
     // Reset state first
     setQuestions([])
     setCurrentPage(0)
     generatedPagesRef.current.clear()
     loadingPagesRef.current.clear()
-    
-    // Now set totalQuestions (this will trigger useEffect, but we'll generate page 0 directly)
+
+    // Set totalQuestions
     setTotalQuestions(total)
-    
-    // Generate first page directly
+
+    // Generate ALL questions upfront (all pages at once)
     if (total && state.text) {
-      generateQuestionsForPage(0, total, defaultRange, state.text).finally(() => {
-        isInitializingRef.current = false
-      })
+      const generateAllQuestions = async () => {
+        setIsGenerating(true)
+        try {
+          // Calculate how many pages we need
+          const totalPages = Math.ceil(total / itemsPerPage)
+
+          // Generate all pages in parallel (or sequentially if needed)
+          const generationPromises = []
+          for (let page = 0; page < totalPages; page++) {
+            generationPromises.push(
+              generateQuestionsForPage(page, total, defaultRange, state.text)
+            )
+          }
+
+          await Promise.all(generationPromises)
+        } finally {
+          setIsGenerating(false)
+          isInitializingRef.current = false
+        }
+      }
+
+      generateAllQuestions()
     } else {
       isInitializingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.text, state.questions.length])
 
-  // Check if current page questions exist, generate if missing
-  useEffect(() => {
-    if (!totalQuestions || !state.text) return
-    
-    const page = currentPage
-    
-    // Check if this page has already been generated or is currently loading
-    if (generatedPagesRef.current.has(page) || loadingPagesRef.current.has(page)) {
-      return
-    }
-    
-    // Generate questions for this page using inline function to avoid dependency issues
-    const generatePage = async () => {
-      // Double-check we're not already loading/generated (race condition protection)
-      if (generatedPagesRef.current.has(page) || loadingPagesRef.current.has(page)) {
-        return
-      }
-      
-      await generateQuestionsForPage(page, totalQuestions, undefined, state.text)
-    }
-    
-    generatePage()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, totalQuestions])
+  // Note: Questions are now generated all upfront, so we don't need per-page generation
+  // This useEffect is kept for backward compatibility but should not trigger
 
   // Load existing answers from session
   useEffect(() => {
     const existingAnswers: Record<string, string | string[]> = {}
     state.answers.forEach((answer) => {
-      const question = state.questions.find(q => q.id === answer.questionId)
+      const question = state.questions.find((q) => q.id === answer.questionId)
       // If it's a multiple-choice question with more than 2 options, it's multiple select
       // Parse comma-separated string back to array
-      if (question?.type === 'multiple-choice' && question.options && question.options.length > 2) {
-        existingAnswers[answer.questionId] = answer.answer ? answer.answer.split(',').map(s => s.trim()) : []
+      if (
+        question?.type === 'multiple-choice' &&
+        question.options &&
+        question.options.length > 2
+      ) {
+        existingAnswers[answer.questionId] = answer.answer
+          ? answer.answer.split(',').map((s) => s.trim())
+          : []
       } else {
         existingAnswers[answer.questionId] = answer.answer
       }
@@ -206,55 +240,126 @@ export default function QuizForm() {
     questionsRef.current = state.questions
   }, [loadingPages, state.questions])
 
-  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
+  const handleAnswerChange = (
+    questionId: string,
+    answer: string | string[]
+  ) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }))
     const answerStr = Array.isArray(answer) ? answer.join(', ') : answer
     setAnswer({ questionId, answer: answerStr })
-  }
-
-  const handleMultipleSelectChange = (questionId: string, option: string, checked: boolean) => {
-    const currentAnswer = answers[questionId] || []
-    const currentArray = Array.isArray(currentAnswer) ? currentAnswer : currentAnswer ? [currentAnswer] : []
-    
-    if (checked) {
-      handleAnswerChange(questionId, [...currentArray, option])
-    } else {
-      handleAnswerChange(questionId, currentArray.filter((a) => a !== option))
+    // Remove from unanswered set if now answered
+    if (validationAttempted && unansweredQuestionIds.has(questionId)) {
+      const hasValue = Array.isArray(answer)
+        ? answer.length > 0
+        : answer.trim() !== ''
+      if (hasValue) {
+        setUnansweredQuestionIds((prev) => {
+          const next = new Set(prev)
+          next.delete(questionId)
+          return next
+        })
+      }
     }
   }
 
+  const handleMultipleSelectChange = (
+    questionId: string,
+    option: string,
+    checked: boolean
+  ) => {
+    const currentAnswer = answers[questionId] || []
+    const currentArray = Array.isArray(currentAnswer)
+      ? currentAnswer
+      : currentAnswer
+        ? [currentAnswer]
+        : []
+
+    if (checked) {
+      handleAnswerChange(questionId, [...currentArray, option])
+    } else {
+      handleAnswerChange(
+        questionId,
+        currentArray.filter((a) => a !== option)
+      )
+    }
+  }
 
   const handleSubmit = async () => {
     // Generate all remaining questions before submitting
     if (totalQuestions && state.questions.length < totalQuestions) {
-      const remainingPages = Math.ceil((totalQuestions - state.questions.length) / itemsPerPage)
+      const remainingPages = Math.ceil(
+        (totalQuestions - state.questions.length) / itemsPerPage
+      )
       const currentLastPage = Math.floor(state.questions.length / itemsPerPage)
-      
-      for (let page = currentLastPage; page < currentLastPage + remainingPages; page++) {
-        if (!loadingPagesRef.current.has(page) && !generatedPagesRef.current.has(page)) {
-          await generateQuestionsForPage(page, totalQuestions, undefined, state.text)
+
+      for (
+        let page = currentLastPage;
+        page < currentLastPage + remainingPages;
+        page++
+      ) {
+        if (
+          !loadingPagesRef.current.has(page) &&
+          !generatedPagesRef.current.has(page)
+        ) {
+          await generateQuestionsForPage(
+            page,
+            totalQuestions,
+            undefined,
+            state.text
+          )
         }
       }
-    }
-    
-    // Wait a bit for questions to load, then check answers
-    setTimeout(() => {
-      const expectedQuestions = totalQuestions || state.questions.length
-      const unansweredQuestions = state.questions
-        .slice(0, expectedQuestions)
-        .filter((q) => !answers[q.id] || (Array.isArray(answers[q.id]) && answers[q.id].length === 0))
 
-      if (unansweredQuestions.length > 0) {
-        toast({
-          title: 'Incomplete quiz',
-          description: `Please answer all ${unansweredQuestions.length} remaining questions.`,
-          variant: 'destructive',
-        })
-        return
+      // Wait for all questions to be generated
+      let attempts = 0
+      while (state.questions.length < totalQuestions && attempts < 20) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        attempts++
       }
+    }
 
-      router.push('/study/results')
-    }, 500)
+    // Check all questions across all pages
+    const expectedQuestions = totalQuestions || state.questions.length
+    const allQuestionsToCheck = state.questions.slice(0, expectedQuestions)
+    const unansweredQuestions = allQuestionsToCheck.filter((q) => {
+      const answer = answers[q.id]
+      if (!answer) return true
+      if (Array.isArray(answer)) return answer.length === 0
+      return answer.trim() === ''
+    })
+
+    if (unansweredQuestions.length > 0) {
+      // Mark validation as attempted and track unanswered questions
+      setValidationAttempted(true)
+      setUnansweredQuestionIds(new Set(unansweredQuestions.map((q) => q.id)))
+
+      toast({
+        title: 'Incomplete quiz',
+        description: `Please answer all ${unansweredQuestions.length} remaining questions before submitting.`,
+        variant: 'destructive',
+      })
+      // Scroll to first unanswered question
+      const firstUnansweredIndex = state.questions.findIndex(
+        (q) => q.id === unansweredQuestions[0].id
+      )
+      if (firstUnansweredIndex >= 0) {
+        const targetPage = Math.floor(firstUnansweredIndex / itemsPerPage)
+        setCurrentPage(targetPage)
+        setTimeout(() => {
+          const element = document.getElementById(
+            `question-${firstUnansweredIndex}`
+          )
+          element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      }
+      return
+    }
+
+    // Clear validation state if all questions are answered
+    setValidationAttempted(false)
+    setUnansweredQuestionIds(new Set())
+
+    router.push('/study/results')
   }
 
   const handleStartOver = () => {
@@ -262,9 +367,10 @@ export default function QuizForm() {
     setShowResetDialog(false)
     toast({
       title: 'Starting over',
-      description: 'Cleared all study material and quiz data. Returning to home page.',
+      description:
+        'Cleared all study material and quiz data. Returning to dashboard.',
     })
-    router.push('/')
+    router.push('/dashboard')
   }
 
   const handleClearAnswers = () => {
@@ -273,12 +379,15 @@ export default function QuizForm() {
     setShowClearAnswersDialog(false)
     toast({
       title: 'Answers cleared',
-      description: 'All quiz responses have been cleared. Questions remain intact.',
+      description:
+        'All quiz responses have been cleared. Questions remain intact.',
     })
   }
 
   // Calculate pagination
-  const totalPages = totalQuestions ? Math.ceil(totalQuestions / itemsPerPage) : Math.ceil(state.questions.length / itemsPerPage)
+  const totalPages = totalQuestions
+    ? Math.ceil(totalQuestions / itemsPerPage)
+    : Math.ceil(state.questions.length / itemsPerPage)
   const startIndex = currentPage * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedQuestions = state.questions.slice(startIndex, endIndex)
@@ -319,20 +428,18 @@ export default function QuizForm() {
     }
   }
 
-  if (isGenerating) {
-    const wordCount = state.text.trim().split(/\s+/).length
-    const questionCount = Math.min(Math.max(Math.floor(wordCount / 100), 5), 20)
-    
-    return <QuizSkeleton questionCount={questionCount} />
+  if (isGenerating && state.questions.length === 0) {
+    const currentRange = state.questionRange || { min: 10, max: 20 }
+    const avgQuestions = Math.round((currentRange.min + currentRange.max) / 2)
+    return <QuizSkeleton questionCount={avgQuestions} />
   }
 
   if (state.questions.length === 0) {
-    const currentRange = state.questionRange || { min: 10, max: 20 }
     return (
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center gap-2 text-muted-foreground">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span>Generating questions within range {currentRange.min}-{currentRange.max}...</span>
+          <span>Generating questions...</span>
         </div>
       </div>
     )
@@ -344,32 +451,66 @@ export default function QuizForm() {
     return answer.trim() !== ''
   }
 
-  const allQuestions = totalQuestions ? Array.from({ length: totalQuestions }, (_, i) => state.questions[i] || null) : state.questions
-  const answeredCount = allQuestions.filter((q) => q && hasAnswerValue(answers[q.id])).length
-  const unansweredCount = (totalQuestions || allQuestions.length) - answeredCount
+  const allQuestions = totalQuestions
+    ? Array.from(
+        { length: totalQuestions },
+        (_, i) => state.questions[i] || null
+      )
+    : state.questions
+  const answeredCount = allQuestions.filter(
+    (q) => q && hasAnswerValue(answers[q.id])
+  ).length
+  const unansweredCount =
+    (totalQuestions || allQuestions.length) - answeredCount
 
-  // Split questions into two columns (5 per column)
-  const leftColumnQuestions = paginatedQuestions.slice(0, 5)
-  const rightColumnQuestions = paginatedQuestions.slice(5, 10)
+  // Single column layout - all questions in one column
 
   const renderQuestion = (question: Question, globalIndex: number) => {
     const hasAnswer = hasAnswerValue(answers[question.id])
-    const currentAnswer = answers[question.id] || (question.type === 'multiple-choice' && question.options && question.options.length > 2 ? [] : '')
+    const currentAnswer =
+      answers[question.id] ||
+      (question.type === 'multiple-choice' &&
+      question.options &&
+      question.options.length > 2
+        ? []
+        : '')
+    const isUnanswered = !hasAnswer
+    // Only show red/danger highlighting after validation attempt and if question is unanswered
+    const showError =
+      validationAttempted && unansweredQuestionIds.has(question.id)
 
     return (
-      <Card key={question.id} id={`question-${globalIndex}`} className="border-2 mb-6">
+      <Card
+        key={question.id}
+        id={`question-${globalIndex}`}
+        className={cn(
+          'border-2 mb-6 transition-all',
+          showError && 'border-red-500/50 bg-red-500/10'
+        )}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 flex-1">
-              <div className={cn(
-                'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0',
-                hasAnswer ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-              )}>
-                {hasAnswer ? <CheckCircle2 className="h-4 w-4" /> : globalIndex + 1}
+              <div
+                className={cn(
+                  'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0',
+                  hasAnswer
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
+                {hasAnswer ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  globalIndex + 1
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm font-medium text-muted-foreground">Question {globalIndex + 1} of {totalQuestions || allQuestions.length}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Question {globalIndex + 1} of{' '}
+                    {totalQuestions || allQuestions.length}
+                  </p>
                 </div>
                 <p className="text-base font-medium">{question.question}</p>
               </div>
@@ -383,7 +524,9 @@ export default function QuizForm() {
                 // Multiple select (checkboxes)
                 <div className="space-y-3">
                   {question.options.map((option, optionIndex) => {
-                    const optionArray = Array.isArray(currentAnswer) ? currentAnswer : []
+                    const optionArray = Array.isArray(currentAnswer)
+                      ? currentAnswer
+                      : []
                     const isChecked = optionArray.includes(option)
                     return (
                       <label
@@ -397,11 +540,17 @@ export default function QuizForm() {
                         <Checkbox
                           id={`${question.id}-${optionIndex}`}
                           checked={isChecked}
-                          onCheckedChange={(checked) => 
-                            handleMultipleSelectChange(question.id, option, checked === true)
+                          onCheckedChange={(checked) =>
+                            handleMultipleSelectChange(
+                              question.id,
+                              option,
+                              checked === true
+                            )
                           }
                         />
-                        <span className="cursor-pointer flex-1 text-sm">{option}</span>
+                        <span className="cursor-pointer flex-1 text-sm">
+                          {option}
+                        </span>
                       </label>
                     )
                   })}
@@ -410,11 +559,15 @@ export default function QuizForm() {
                 // Single select (radio)
                 <RadioGroup
                   value={typeof currentAnswer === 'string' ? currentAnswer : ''}
-                  onValueChange={(value) => handleAnswerChange(question.id, value)}
+                  onValueChange={(value) =>
+                    handleAnswerChange(question.id, value)
+                  }
                   className="space-y-3"
                 >
                   {question.options.map((option, optionIndex) => {
-                    const isSelected = typeof currentAnswer === 'string' && currentAnswer === option
+                    const isSelected =
+                      typeof currentAnswer === 'string' &&
+                      currentAnswer === option
                     return (
                       <label
                         key={optionIndex}
@@ -429,7 +582,9 @@ export default function QuizForm() {
                           id={`${question.id}-${optionIndex}`}
                           className="h-5 w-5"
                         />
-                        <span className="cursor-pointer flex-1 text-sm">{option}</span>
+                        <span className="cursor-pointer flex-1 text-sm">
+                          {option}
+                        </span>
                       </label>
                     )
                   })}
@@ -455,7 +610,9 @@ export default function QuizForm() {
                     id={`${question.id}-${optionIndex}`}
                     className="h-5 w-5"
                   />
-                  <span className="cursor-pointer flex-1 text-sm">{option}</span>
+                  <span className="cursor-pointer flex-1 text-sm">
+                    {option}
+                  </span>
                 </label>
               ))}
             </RadioGroup>
@@ -475,48 +632,58 @@ export default function QuizForm() {
   }
 
   return (
-    <div className="flex h-full w-full">
+    <section className="flex h-full w-full">
       {/* Left Sidebar - Question Navigator */}
-      <aside className="w-64 border-r bg-card flex-shrink-0 overflow-y-auto">
+      <aside className="w-64 fixed h-full border-t border-r bg-card flex-shrink-0 overflow-y-auto">
         <div className="p-4 space-y-4">
           <div>
             <h3 className="text-sm font-semibold mb-3">Review your answers</h3>
             <div className="space-y-2 text-sm">
-              <div className="text-muted-foreground">Answered: {answeredCount}</div>
-              <div className="text-muted-foreground">Unanswered: {unansweredCount}</div>
+              <div className="text-muted-foreground">
+                Answered: {answeredCount}
+              </div>
+              <div className="text-muted-foreground">
+                Unanswered: {unansweredCount}
+              </div>
             </div>
           </div>
-          
+
           <div>
             <div className="grid grid-cols-5 gap-2">
-              {Array.from({ length: totalQuestions || allQuestions.length }, (_, index) => {
-                const question = state.questions[index]
-                const hasAnswer = question ? hasAnswerValue(answers[question.id]) : false
-                const isCurrentPage = Math.floor(index / itemsPerPage) === currentPage
-                return (
-                  <button
-                    key={question?.id || `question-${index}`}
-                    onClick={() => handleQuestionClick(index)}
-                    className={cn(
-                      'h-8 w-8 rounded text-xs font-medium transition-colors',
-                      hasAnswer 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                      isCurrentPage && 'ring-2 ring-secondary'
-                    )}
-                    type="button"
-                  >
-                    {index + 1}
-                  </button>
-                )
-              })}
+              {Array.from(
+                { length: totalQuestions || allQuestions.length },
+                (_, index) => {
+                  const question = state.questions[index]
+                  const hasAnswer = question
+                    ? hasAnswerValue(answers[question.id])
+                    : false
+                  const isCurrentPage =
+                    Math.floor(index / itemsPerPage) === currentPage
+                  return (
+                    <button
+                      key={question?.id || `question-${index}`}
+                      onClick={() => handleQuestionClick(index)}
+                      className={cn(
+                        'h-8 w-8 rounded text-xs font-medium transition-colors',
+                        hasAnswer
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                        isCurrentPage && 'ring-2 ring-secondary'
+                      )}
+                      type="button"
+                    >
+                      {index + 1}
+                    </button>
+                  )
+                }
+              )}
             </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto">
+      <article className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-6 py-6">
           {/* Header */}
           <div className="mb-6">
@@ -524,12 +691,15 @@ export default function QuizForm() {
               <div>
                 <h1 className="text-2xl font-bold">AI Fundamentals Quiz</h1>
                 <p className="text-muted-foreground mt-1">
-                  Progress: {answeredCount} of {totalQuestions || allQuestions.length}
+                  Progress: {answeredCount} of{' '}
+                  {totalQuestions || allQuestions.length}
                 </p>
               </div>
               {totalPages > 1 && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Page {currentPage + 1} of {totalPages}</span>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage + 1} of {totalPages}
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -551,31 +721,15 @@ export default function QuizForm() {
             </div>
           </div>
 
-          {/* Questions - Two Column Layout */}
+          {/* Questions - Single Column Layout */}
           {isPageLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                <span>Loading questions for page {currentPage + 1}...</span>
-              </div>
-            </div>
+            <QuizSkeleton questionCount={itemsPerPage} />
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-0">
-                {leftColumnQuestions.map((question, pageIndex) => {
-                  const globalIndex = startIndex + pageIndex
-                  return renderQuestion(question, globalIndex)
-                })}
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-0">
-                {rightColumnQuestions.map((question, pageIndex) => {
-                  const globalIndex = startIndex + pageIndex + 5
-                  return renderQuestion(question, globalIndex)
-                })}
-              </div>
+            <div className="space-y-6">
+              {paginatedQuestions.map((question, pageIndex) => {
+                const globalIndex = startIndex + pageIndex
+                return renderQuestion(question, globalIndex)
+              })}
             </div>
           )}
 
@@ -590,7 +744,7 @@ export default function QuizForm() {
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Previous Page
               </Button>
-              
+
               <div className="flex gap-2">
                 {Array.from({ length: totalPages }, (_, i) => (
                   <Button
@@ -604,7 +758,7 @@ export default function QuizForm() {
                   </Button>
                 ))}
               </div>
-              
+
               <Button
                 variant="outline"
                 onClick={handleNextPage}
@@ -618,13 +772,17 @@ export default function QuizForm() {
 
           {/* Submit Button */}
           <div className="flex justify-center mt-8 pt-6 border-t">
-            <Button onClick={handleSubmit} size="lg" className="gap-2 h-12 text-base font-semibold px-8">
+            <Button
+              onClick={handleSubmit}
+              size="lg"
+              className="gap-2 h-12 text-base font-semibold px-8"
+            >
               <CheckCircle className="h-5 w-5" />
               Submit Quiz
             </Button>
           </div>
         </div>
-      </div>
+      </article>
 
       {/* Start Over Confirmation Dialog */}
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
@@ -635,23 +793,19 @@ export default function QuizForm() {
               Start Over?
             </DialogTitle>
             <DialogDescription>
-              This will clear your current study material and quiz. You&apos;ll return to the home page to start fresh.
+              This will clear your current study material and quiz. You&apos;ll
+              return to the home page to start fresh.
             </DialogDescription>
             <div className="mt-2 p-2 bg-muted rounded text-sm">
-              You have answered {answeredCount} of {totalQuestions || allQuestions.length} questions.
+              You have answered {answeredCount} of{' '}
+              {totalQuestions || allQuestions.length} questions.
             </div>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowResetDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowResetDialog(false)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleStartOver}
-            >
+            <Button variant="destructive" onClick={handleStartOver}>
               Start Over
             </Button>
           </DialogFooter>
@@ -659,7 +813,10 @@ export default function QuizForm() {
       </Dialog>
 
       {/* Clear Answers Confirmation Dialog */}
-      <Dialog open={showClearAnswersDialog} onOpenChange={setShowClearAnswersDialog}>
+      <Dialog
+        open={showClearAnswersDialog}
+        onOpenChange={setShowClearAnswersDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -667,10 +824,12 @@ export default function QuizForm() {
               Clear Quiz Answers?
             </DialogTitle>
             <DialogDescription>
-              This will clear all your quiz responses but keep the questions intact. You can answer them again.
+              This will clear all your quiz responses but keep the questions
+              intact. You can answer them again.
             </DialogDescription>
             <div className="mt-2 p-2 bg-muted rounded text-sm">
-              You have answered {answeredCount} of {totalQuestions || allQuestions.length} questions.
+              You have answered {answeredCount} of{' '}
+              {totalQuestions || allQuestions.length} questions.
             </div>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -680,15 +839,12 @@ export default function QuizForm() {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleClearAnswers}
-            >
+            <Button variant="destructive" onClick={handleClearAnswers}>
               Clear Answers
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </section>
   )
 }
