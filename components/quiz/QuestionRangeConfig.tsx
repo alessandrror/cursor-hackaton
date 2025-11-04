@@ -32,17 +32,25 @@ export default function QuestionRangeConfig({
   const [error, setError] = useState<string | null>(null)
 
   const handleMinChange = (value: number) => {
-    setMinQuestions(value)
-    if (value >= maxQuestions) {
-      setMaxQuestions(Math.min(value + 5, 50))
+    // Clamp value to valid range
+    const clampedValue = Math.max(5, Math.min(45, value))
+    setMinQuestions(clampedValue)
+    // Ensure min is always less than max
+    if (clampedValue >= maxQuestions) {
+      const newMax = Math.min(clampedValue + 1, 50)
+      setMaxQuestions(newMax)
     }
     setError(null)
   }
 
   const handleMaxChange = (value: number) => {
-    setMaxQuestions(value)
-    if (value <= minQuestions) {
-      setMinQuestions(Math.max(value - 5, 5))
+    // Clamp value to valid range
+    const clampedValue = Math.max(10, Math.min(50, value))
+    setMaxQuestions(clampedValue)
+    // Ensure max is always greater than min
+    if (clampedValue <= minQuestions) {
+      const newMin = Math.max(clampedValue - 1, 5)
+      setMinQuestions(newMin)
     }
     setError(null)
   }
@@ -130,9 +138,14 @@ export default function QuestionRangeConfig({
               id="min-questions"
               type="number"
               min={5}
-              max={45}
+              max={Math.min(45, maxQuestions - 1)}
               value={minQuestions}
-              onChange={(e) => handleMinChange(parseInt(e.target.value) || 5)}
+              onChange={(e) => {
+                const value = parseInt(e.target.value)
+                if (!isNaN(value)) {
+                  handleMinChange(value)
+                }
+              }}
               className="w-20"
             />
             </div>
@@ -158,10 +171,15 @@ export default function QuestionRangeConfig({
               <Input
                 id="max-questions"
                 type="number"
-                min={10}
+                min={Math.max(10, minQuestions + 1)}
                 max={50}
                 value={maxQuestions}
-                onChange={(e) => handleMaxChange(parseInt(e.target.value) || 10)}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value)
+                  if (!isNaN(value)) {
+                    handleMaxChange(value)
+                  }
+                }}
                 className="w-20"
               />
             </div>

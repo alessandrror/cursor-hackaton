@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { useHistory } from '@/hooks/useHistory'
 import { useToast } from '@/hooks/use-toast'
 import { HistoryEntry } from '@/types/history'
-import { formatTime } from '@/lib/utils'
+import { cn, formatTime } from '@/lib/utils'
 
 export default function HistoryView() {
   const router = useRouter()
@@ -145,10 +145,10 @@ export default function HistoryView() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-2xl">{sourceIcon}</span>
-                      <Badge variant="outline" className="capitalize">
+                      <Badge variant="outline" className="capitalize !transition-none !duration-0">
                         {entry.source.type}
                       </Badge>
-                      <Badge className={getScoreColor(entry.quiz.percentage)}>
+                      <Badge className={cn(getScoreColor(entry.quiz.percentage), '!transition-none !duration-0')}>
                         {entry.quiz.percentage}%
                       </Badge>
                     </div>
@@ -221,13 +221,13 @@ export default function HistoryView() {
                   <div>
                     <h3 className="font-semibold mb-2">Question Difficulty</h3>
                     <div className="flex gap-2">
-                      <Badge className="bg-green-500/20 text-green-400">
+                      <Badge className="bg-green-500/20 text-green-400 !transition-none !duration-0">
                         Easy: {entry.quiz.difficulty.easy}
                       </Badge>
-                      <Badge className="bg-yellow-500/20 text-yellow-400">
+                      <Badge className="bg-yellow-500/20 text-yellow-400 !transition-none !duration-0">
                         Medium: {entry.quiz.difficulty.medium}
                       </Badge>
-                      <Badge className="bg-red-500/20 text-red-400">
+                      <Badge className="bg-red-500/20 text-red-400 !transition-none !duration-0">
                         Hard: {entry.quiz.difficulty.hard}
                       </Badge>
                     </div>

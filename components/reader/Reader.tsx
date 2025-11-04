@@ -2,7 +2,12 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Clock, BookOpen, CheckCircle, Home, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import {
+  Clock,
+  BookOpen,
+  CheckCircle,
+  Home,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -28,9 +33,10 @@ import Timer from './Timer'
 
 export default function Reader() {
   const router = useRouter()
-  const { state, setTimerState, setTimeRemaining, clearSessionData } = useSession()
+  const { state, setTimerState, setTimeRemaining, clearSessionData } =
+    useSession()
   const { toast } = useToast()
-  const { isMuted, toggleMute, playRingtone, stopRingtone } = useRingtone()
+  const { isMuted, staticTimerRef, toggleMute, playRingtone, stopRingtone } = useRingtone()
   const [showTimeUpModal, setShowTimeUpModal] = useState(false)
   const [showStartOverDialog, setShowStartOverDialog] = useState(false)
 
@@ -78,9 +84,10 @@ export default function Reader() {
     stopRingtone()
     toast({
       title: 'Starting over',
-      description: 'Cleared all study material and quiz data. Returning to home page.',
+      description:
+        'Cleared all study material and quiz data. Returning to dashboard.',
     })
-    router.push('/')
+    router.push('/dashboard')
   }
 
   if (!state.text) {
@@ -93,7 +100,7 @@ export default function Reader() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={() => router.push('/')}>Go Back</Button>
+          <Button onClick={() => router.back()}>Go Back</Button>
         </CardContent>
       </Card>
     )
@@ -102,7 +109,7 @@ export default function Reader() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Timer Section */}
-      <Card className="border-2 shadow-lg">
+      <Card ref={staticTimerRef} className="border-2 shadow-lg">
         <CardHeader className="text-center pb-4">
           <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
             <Clock className="h-8 w-8 text-primary" />
@@ -116,6 +123,7 @@ export default function Reader() {
         </CardHeader>
         <CardContent className="space-y-6">
           <Timer
+            staticTimerRef={staticTimerRef}
             initialTimeMs={state.readingTimeMs}
             onTimeUp={handleTimeUp}
             onTimeChange={handleTimeChange}
@@ -137,9 +145,11 @@ export default function Reader() {
                 <BookOpen className="h-5 w-5 text-secondary" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold">Reading Material</CardTitle>
+                <CardTitle className="text-xl font-bold">
+                  Reading Material
+                </CardTitle>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs !transition-none !duration-0">
                     {state.source === 'pdf' ? 'PDF Upload' : 'Text Input'}
                   </Badge>
                 </div>
@@ -149,7 +159,7 @@ export default function Reader() {
         </CardHeader>
         <CardContent>
           <div className="prose prose-invert max-w-none">
-            <div className="whitespace-pre-wrap leading-relaxed text-base p-6 bg-muted/30 rounded-lg border border-border/50">
+            <div className="whitespace-pre-wrap break-words leading-relaxed text-base p-6 bg-muted/30 rounded-lg border border-border/50">
               {state.text}
             </div>
           </div>
@@ -167,9 +177,9 @@ export default function Reader() {
           <Home className="h-5 w-5" />
           Start Over
         </Button>
-        <Button 
-          onClick={handleEarlyQuiz} 
-          size="lg" 
+        <Button
+          onClick={handleEarlyQuiz}
+          size="lg"
           className="gap-2 h-12 text-base font-semibold"
         >
           <CheckCircle className="h-5 w-5" />
@@ -184,15 +194,19 @@ export default function Reader() {
             <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
               <Clock className="h-8 w-8 text-primary animate-pulse" />
             </div>
-            <DialogTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+            <DialogTitle className="text-2xl font-bold text-center gap-2">
               Time&apos;s Up! ⏰
             </DialogTitle>
-            <DialogDescription className="text-base mt-2">
-              Your reading time is complete. You can continue reading or start the quiz now.
+            <DialogDescription className="text-base text-center mt-2">
+              Are you ready to test your knowledge?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:flex-row">
-            <Button variant="outline" onClick={handleContinueReading} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={handleContinueReading}
+              className="flex-1"
+            >
               Continue Reading
             </Button>
             <Button onClick={handleStartQuiz} className="flex-1">
@@ -211,12 +225,13 @@ export default function Reader() {
               Start Over?
             </DialogTitle>
             <DialogDescription className="text-base">
-              This will clear your current study material and quiz. You&apos;ll return to the home page to start fresh.
-              <div className="mt-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                <div className="text-sm font-semibold text-destructive">
+              This will clear your current study material and quiz. You&apos;ll
+              return to the home page to start fresh.
+              <span className="block mt-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                <span className="block text-sm font-semibold text-destructive">
                   Current reading progress will be lost.
-                </div>
-              </div>
+                </span>
+              </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -226,10 +241,7 @@ export default function Reader() {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleStartOver}
-            >
+            <Button variant="destructive" onClick={handleStartOver}>
               Start Over
             </Button>
           </DialogFooter>

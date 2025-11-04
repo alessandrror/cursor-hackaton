@@ -7,6 +7,7 @@ const RINGTONE_MUTED_KEY = 'ringtoneMuted'
 export function useRingtone() {
   const [isMuted, setIsMuted] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const staticTimerRef = useRef<HTMLDivElement | null>(null)
 
   // Initialize mute state from localStorage
   useEffect(() => {
@@ -70,6 +71,7 @@ export function useRingtone() {
 
   return {
     isMuted,
+    staticTimerRef,
     toggleMute,
     playRingtone,
     stopRingtone,

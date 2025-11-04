@@ -33,15 +33,24 @@ function sessionReducer(
       return { ...state, source: action.payload }
     case 'SET_TEXT':
       // Clear questions and answers when text changes to ensure fresh quiz generation
+      // Reset timer state when text changes
       return { 
         ...state, 
         text: action.payload,
         questions: [],
         answers: [],
-        forceRegenerate: false
+        forceRegenerate: false,
+        timerState: 'idle',
+        timeRemainingMs: state.readingTimeMs || 0
       }
     case 'SET_READING_TIME':
-      return { ...state, readingTimeMs: action.payload }
+      // Reset timer state when reading time changes
+      return { 
+        ...state, 
+        readingTimeMs: action.payload,
+        timerState: 'idle',
+        timeRemainingMs: action.payload
+      }
     case 'SET_QUESTIONS':
       return { ...state, questions: action.payload, forceRegenerate: false }
     case 'SET_ANSWER':
@@ -84,7 +93,9 @@ function sessionReducer(
         questions: [],
         answers: [],
         forceRegenerate: false,
-        // Preserve: apiKey, timerState, timeRemainingMs
+        timerState: 'idle',
+        timeRemainingMs: 0,
+        // Preserve: apiKey
       }
     case 'CLEAR_INPUT_DATA':
       return {
@@ -151,6 +162,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         readingTimeMs: state.readingTimeMs,
         questions: state.questions,
         answers: state.answers,
+        questionRange: state.questionRange,
       }
       localStorage.setItem('study-timer-session', JSON.stringify(toPersist))
     } catch (error) {
@@ -162,6 +174,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     state.readingTimeMs,
     state.questions,
     state.answers,
+    state.questionRange,
   ])
 
   const actions = {

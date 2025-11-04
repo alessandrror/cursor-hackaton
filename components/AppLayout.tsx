@@ -4,11 +4,14 @@ import { usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import Navbar from '@/components/Navbar'
 import LandingNavbar from '@/components/LandingNavbar'
+import { useSidebar } from '@/contexts/SidebarContext'
+import { cn } from '@/lib/utils'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isLandingPage = pathname === '/'
   const isAuthPage = pathname === '/auth'
+  const { isCollapsed, toggleSidebar } = useSidebar()
 
   if (isLandingPage) {
     return (
@@ -29,11 +32,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen bg-background text-foreground overflow-hidden">
-      <Sidebar />
-      <div className="ml-64 h-full flex flex-col">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
-      </div>
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+      <Navbar isCollapsed={isCollapsed} />
+      <main
+        className={cn(
+          'h-full flex flex-col transition-all duration-300',
+          isCollapsed ? 'ml-16' : 'ml-64'
+        )}
+      >
+        <div className="flex-1 overflow-y-auto pt-16">{children}</div>
+      </main>
     </div>
   )
 }
