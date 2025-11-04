@@ -38,6 +38,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useSession } from '@/providers/SessionProvider'
+import { useTrial } from '@/hooks/useTrial'
 import { calculateScore } from '@/lib/openai'
 import { useHistory } from '@/hooks/useHistory'
 import { HistoryEntry } from '@/types/history'
@@ -98,10 +99,12 @@ export default function ResultsView() {
     setTimeRemaining,
   } = useSession()
   const { addEntry, settings } = useHistory()
+  const { incrementTrialUsage } = useTrial()
   const { toast } = useToast()
   const [showRetakeDialog, setShowRetakeDialog] = useState(false)
   const [hasSaved, setHasSaved] = useState(false)
   const [hasShownHistoryNotice, setHasShownHistoryNotice] = useState(false)
+  const [hasIncrementedTrial, setHasIncrementedTrial] = useState(false)
   const [questionAnalyses, setQuestionAnalyses] = useState<
     Map<string, QuestionAnalysis>
   >(new Map())
@@ -188,6 +191,18 @@ export default function ResultsView() {
       prevQuestionsLengthRef.current = state.questions.length
     }
   }, [state.questions.length])
+
+  // Increment trial usage when results are displayed (session completed)
+  useEffect(() => {
+    if (
+      state.questions.length > 0 &&
+      state.answers.length > 0 &&
+      !hasIncrementedTrial
+    ) {
+      incrementTrialUsage()
+      setHasIncrementedTrial(true)
+    }
+  }, [state.questions.length, state.answers.length, hasIncrementedTrial, incrementTrialUsage])
 
   // Save to history on first render
   useEffect(() => {

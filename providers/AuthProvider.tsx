@@ -11,6 +11,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
   signInWithOTP: (email: string) => Promise<void>
+  signInWithMagicLink: (email: string) => Promise<void>
   verifyOTP: (email: string, token: string) => Promise<void>
 }
 
@@ -56,7 +57,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
+  // Send 6-digit OTP code (no redirect)
   const signInWithOTP = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        // Explicitly do NOT include emailRedirectTo to send OTP code instead of magic link
+      },
+    })
+    if (error) throw error
+  }
+
+  // Send magic link (with redirect)
+  const signInWithMagicLink = async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -84,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithGoogle,
         signOut,
         signInWithOTP,
+        signInWithMagicLink,
         verifyOTP,
       }}
     >

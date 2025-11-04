@@ -6,10 +6,13 @@ import { Upload, FileText, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useSession } from '@/providers/SessionProvider'
+import { useTrial } from '@/hooks/useTrial'
 import { extractTextFromPdf } from '@/lib/pdf'
 import { countWords, calculateReadingTime } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { RegistrationModal } from '@/components/trial/RegistrationModal'
 
 export default function InputStep() {
   const router = useRouter()
@@ -23,12 +26,14 @@ export default function InputStep() {
     setTimeRemaining,
   } = useSession()
   const { toast } = useToast()
+  const { trialStatus, isLoading: isTrialLoading } = useTrial()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [text, setTextState] = useState('')
   const [characterCount, setCharacterCount] = useState(0)
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false)
 
   // Sync text state with session state, but allow clearing
   useEffect(() => {
@@ -126,13 +131,19 @@ export default function InputStep() {
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!text.trim()) {
       toast({
         title: 'Content required',
         description: 'Please upload a PDF or enter text to study.',
         variant: 'destructive',
       })
+      return
+    }
+
+    // Check trial status before allowing submission
+    if (!isTrialLoading && !trialStatus.hasAccess) {
+      setShowRegistrationModal(true)
       return
     }
 
@@ -153,17 +164,26 @@ export default function InputStep() {
     router.push('/study/read')
   }
 
-  const canSubmit = text.trim() && !isProcessing
+  const canSubmit = text.trim() && !isProcessing && !isTrialLoading
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-8 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold">Prepare Your Study Content</h1>
-        <p className="text-lg text-muted-foreground">
-          Upload a PDF document or paste text to begin an AI-powered reading and
-          quizzing session.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold">Prepare Your Study Content</h1>
+            <p className="text-lg text-muted-foreground">
+              Upload a PDF document or paste text to begin an AI-powered reading and
+              quizzing session.
+            </p>
+          </div>
+          {!isTrialLoading && trialStatus.remaining !== Infinity && (
+            <Badge variant="outline" className="text-sm">
+              {trialStatus.remaining} of 3 free sessions remaining
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Two Column Layout */}
@@ -262,6 +282,12 @@ export default function InputStep() {
           Start Reading Session
         </Button>
       </div>
+
+      {/* Registration Modal */}
+      <RegistrationModal
+        open={showRegistrationModal}
+        onOpenChange={setShowRegistrationModal}
+      />
     </div>
   )
 }
