@@ -1,9 +1,24 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Settings, Trash2, Download, ArrowLeft, Target, AlertCircle, Database, Save } from 'lucide-react'
+import {
+  Settings,
+  Trash2,
+  Download,
+  ArrowLeft,
+  Target,
+  AlertCircle,
+  Database,
+  Save,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -19,7 +34,10 @@ interface QuestionRangeSettingsProps {
   onRangeChange: (range: { min: number; max: number }) => void
 }
 
-function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSettingsProps) {
+function QuestionRangeSettings({
+  currentRange,
+  onRangeChange,
+}: QuestionRangeSettingsProps) {
   const [minQuestions, setMinQuestions] = useState(currentRange?.min || 5)
   const [maxQuestions, setMaxQuestions] = useState(currentRange?.max || 15)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +67,7 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
       setError('Range must be between 5 and 50 questions')
       return
     }
-    
+
     onRangeChange({ min: minQuestions, max: maxQuestions })
     setError(null)
   }
@@ -69,9 +87,14 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
         <Alert className="bg-primary/10 border-primary/20">
           <Target className="h-4 w-4 text-primary" />
           <AlertDescription className="text-base">
-            <span className="font-semibold">Current range:</span> {currentRange.min}-{currentRange.max} questions
+            <span className="font-semibold">Current range:</span>{' '}
+            {currentRange.min}-{currentRange.max} questions
             <span className="text-muted-foreground ml-2">
-              (avg: {Math.round((currentRange.min + currentRange.max) / 2)}, {getEstimatedTime(Math.round((currentRange.min + currentRange.max) / 2))})
+              (avg: {Math.round((currentRange.min + currentRange.max) / 2)},{' '}
+              {getEstimatedTime(
+                Math.round((currentRange.min + currentRange.max) / 2)
+              )}
+              )
             </span>
           </AlertDescription>
         </Alert>
@@ -79,7 +102,8 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
         <Alert className="bg-secondary/10 border-secondary/20">
           <AlertCircle className="h-4 w-4 text-secondary" />
           <AlertDescription className="text-base">
-            <span className="font-semibold">No range set yet.</span> Questions will be generated using the default range (10-20 questions).
+            <span className="font-semibold">No range set yet.</span> Questions
+            will be generated using the default range (10-20 questions).
           </AlertDescription>
         </Alert>
       )}
@@ -88,7 +112,10 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
       <div className="space-y-6">
         <div className="space-y-4 p-4 rounded-lg border-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="settings-min-questions" className="text-base font-semibold">
+            <Label
+              htmlFor="settings-min-questions"
+              className="text-base font-semibold"
+            >
               Minimum Questions: {minQuestions}
             </Label>
             <span className="text-sm text-muted-foreground">
@@ -116,7 +143,10 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
 
         <div className="space-y-4 p-4 rounded-lg border-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="settings-max-questions" className="text-base font-semibold">
+            <Label
+              htmlFor="settings-max-questions"
+              className="text-base font-semibold"
+            >
               Maximum Questions: {maxQuestions}
             </Label>
             <span className="text-sm text-muted-foreground">
@@ -157,23 +187,41 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
           <div className="space-y-3">
             <div className="font-semibold text-base mb-3">Range Preview</div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Question range:</span>
-              <span className="font-bold text-base">{minQuestions}-{maxQuestions} questions</span>
+              <span className="text-sm text-muted-foreground">
+                Question range:
+              </span>
+              <span className="font-bold text-base">
+                {minQuestions}-{maxQuestions} questions
+              </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Average questions:</span>
-              <span className="font-bold text-base">{Math.round((minQuestions + maxQuestions) / 2)} questions</span>
+              <span className="text-sm text-muted-foreground">
+                Average questions:
+              </span>
+              <span className="font-bold text-base">
+                {Math.round((minQuestions + maxQuestions) / 2)} questions
+              </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Estimated time:</span>
-              <span className="font-bold text-base">{getEstimatedTime(Math.round((minQuestions + maxQuestions) / 2))}</span>
+              <span className="text-sm text-muted-foreground">
+                Estimated time:
+              </span>
+              <span className="font-bold text-base">
+                {getEstimatedTime(
+                  Math.round((minQuestions + maxQuestions) / 2)
+                )}
+              </span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Save Button */}
-      <Button onClick={handleSave} className="w-full h-12 text-base font-semibold" size="lg">
+      <Button
+        onClick={handleSave}
+        className="w-full h-12 text-base font-semibold"
+        size="lg"
+      >
         <Save className="h-5 w-5 mr-2" />
         Update Question Range
       </Button>
@@ -183,7 +231,8 @@ function QuestionRangeSettings({ currentRange, onRangeChange }: QuestionRangeSet
 
 export default function SettingsView() {
   const router = useRouter()
-  const { history, settings, updateSettings, clearHistory, exportHistory } = useHistory()
+  const { history, settings, updateSettings, clearHistory, exportHistory } =
+    useHistory()
   const { toast } = useToast()
   const { state, setQuestionRange } = useSession()
 
@@ -209,8 +258,8 @@ export default function SettingsView() {
     updateSettings({ enabled })
     toast({
       title: enabled ? 'History enabled' : 'History disabled',
-      description: enabled 
-        ? 'Your study sessions will now be saved' 
+      description: enabled
+        ? 'Your study sessions will now be saved'
         : 'Your study sessions will no longer be saved',
     })
   }
@@ -223,7 +272,11 @@ export default function SettingsView() {
   }
 
   const handleClearHistory = () => {
-    if (confirm('Are you sure you want to delete all history? This action cannot be undone.')) {
+    if (
+      confirm(
+        'Are you sure you want to delete all history? This action cannot be undone.'
+      )
+    ) {
       clearHistory()
       toast({
         title: 'History cleared',
@@ -251,21 +304,12 @@ export default function SettingsView() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          className="h-10 w-10"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+      <div className="flex flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Settings className="h-8 w-8 text-primary" />
-            Settings
-          </h1>
-          <p className="text-muted-foreground text-base mt-1">Manage your study session preferences</p>
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground text-base mt-1">
+            Manage your study session preferences
+          </p>
         </div>
       </div>
 
@@ -277,15 +321,18 @@ export default function SettingsView() {
               <Target className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">Question Range Settings</CardTitle>
+              <CardTitle className="text-xl font-bold">
+                Question Range Settings
+              </CardTitle>
               <CardDescription className="text-base mt-1">
-                Configure the range of questions generated for your quizzes (5-50 questions)
+                Configure the range of questions generated for your quizzes
+                (5-50 questions)
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <QuestionRangeSettings 
+          <QuestionRangeSettings
             currentRange={state.questionRange}
             onRangeChange={handleRangeChange}
           />
@@ -300,7 +347,9 @@ export default function SettingsView() {
               <Database className="h-6 w-6 text-secondary" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">History Settings</CardTitle>
+              <CardTitle className="text-xl font-bold">
+                History Settings
+              </CardTitle>
               <CardDescription className="text-base mt-1">
                 Configure how your study sessions are saved locally
               </CardDescription>
@@ -311,7 +360,12 @@ export default function SettingsView() {
           {/* Enable/Disable History */}
           <div className="flex items-center justify-between p-4 rounded-lg border-2">
             <div className="space-y-0.5 flex-1">
-              <Label htmlFor="enable-history" className="text-base font-semibold">Enable History</Label>
+              <Label
+                htmlFor="enable-history"
+                className="text-base font-semibold"
+              >
+                Enable History
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Save your study sessions locally on this device
               </p>
@@ -325,7 +379,9 @@ export default function SettingsView() {
 
           {/* Max Entries */}
           <div className="space-y-3 p-4 rounded-lg border-2">
-            <Label htmlFor="max-entries" className="text-base font-semibold">Maximum History Entries</Label>
+            <Label htmlFor="max-entries" className="text-base font-semibold">
+              Maximum History Entries
+            </Label>
             <div className="flex items-center gap-3">
               <Input
                 id="max-entries"
@@ -336,12 +392,11 @@ export default function SettingsView() {
                 onChange={(e) => handleMaxEntriesChange(e.target.value)}
                 className="max-w-[200px] h-10"
               />
-              <span className="text-sm text-muted-foreground">
-                sessions
-              </span>
+              <span className="text-sm text-muted-foreground">sessions</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Older sessions will be automatically removed when this limit is reached
+              Older sessions will be automatically removed when this limit is
+              reached
             </p>
           </div>
 
@@ -350,13 +405,17 @@ export default function SettingsView() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-muted/50 text-center">
                 <div className="text-3xl font-bold">{history.length}</div>
-                <div className="text-sm text-muted-foreground mt-1">Saved Sessions</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Saved Sessions
+                </div>
               </div>
               <div className="p-4 rounded-lg bg-muted/50 text-center">
                 <div className="text-3xl font-bold">
-                  {((JSON.stringify(history).length / 1024) / 1024).toFixed(2)} MB
+                  {(JSON.stringify(history).length / 1024 / 1024).toFixed(2)} MB
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">Storage Used</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Storage Used
+                </div>
               </div>
             </div>
           </div>
@@ -371,7 +430,9 @@ export default function SettingsView() {
               <Trash2 className="h-6 w-6 text-accent" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">Data Management</CardTitle>
+              <CardTitle className="text-xl font-bold">
+                Data Management
+              </CardTitle>
               <CardDescription className="text-base mt-1">
                 Export or delete your saved history
               </CardDescription>
@@ -402,7 +463,8 @@ export default function SettingsView() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Your data is stored locally on your device and never sent to any server
+              Your data is stored locally on your device and never sent to any
+              server
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -410,4 +472,3 @@ export default function SettingsView() {
     </div>
   )
 }
-

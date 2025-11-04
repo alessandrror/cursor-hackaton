@@ -34,10 +34,10 @@ export default function Navbar({ isCollapsed }: { isCollapsed: boolean }) {
   return (
     <header
       className={cn(
-        'fixed top-0 right-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 transition-[left] duration-300',
+        'fixed top-0 right-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 transition-[left] duration-300',
         isCollapsed
           ? 'left-16'
-          : 'left-64'
+          : 'left-16 md:left-64'
       )}
     >
       <nav className="flex h-16 items-center justify-between px-6 w-full">

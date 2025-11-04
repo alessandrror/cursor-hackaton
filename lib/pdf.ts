@@ -2,15 +2,21 @@
 
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
 
-// Configure PDF.js worker to use local file from public directory
-if (typeof window !== 'undefined') {
-  GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs'
+if (typeof window !== 'undefined' && 'Worker' in window) {
+  GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString()
 }
 
 export async function extractTextFromPdf(file: File): Promise<string> {
   try {
     const arrayBuffer = await file.arrayBuffer()
-    const pdf = await getDocument({ data: arrayBuffer }).promise
+
+    const pdf = await getDocument({
+      data: arrayBuffer,
+      standardFontDataUrl: '/pdfjs_standard_fonts/',
+    }).promise
 
     let fullText = ''
 
