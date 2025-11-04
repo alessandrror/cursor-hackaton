@@ -45,6 +45,7 @@ export default function InputStep() {
     else if (state.text && text === '') {
       setTextState(state.text)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.text])
 
   // Update character count
@@ -170,8 +171,8 @@ export default function InputStep() {
     <div className="w-full max-w-7xl mx-auto px-6 py-8 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="text-center md:text-start">
             <h1 className="text-4xl font-bold">Prepare Your Study Content</h1>
             <p className="text-lg text-muted-foreground">
               Upload a PDF document or paste text to begin an AI-powered reading and
@@ -179,7 +180,7 @@ export default function InputStep() {
             </p>
           </div>
           {!isTrialLoading && trialStatus.remaining !== Infinity && (
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="outline" className="text-sm self-center md:self-auto">
               {trialStatus.remaining} of 3 free sessions remaining
             </Badge>
           )}

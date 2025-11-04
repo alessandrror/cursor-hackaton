@@ -68,7 +68,7 @@ export default function DashboardView() {
     <div className="px-6 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 md:gap-0">
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
@@ -76,9 +76,10 @@ export default function DashboardView() {
             </p>
           </div>
           <Link href="/study">
-            <Button size="lg">
-              <BookOpen className="mr-2 h-5 w-5" />
-              Start Study Session
+            <Button>
+              <BookOpen className="h-5 w-5" />
+              <span className="inline md:hidden">Start</span>
+              <span className="hidden md:inline">Start Study Session</span>
             </Button>
           </Link>
         </div>
@@ -230,11 +231,9 @@ export default function DashboardView() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Recent Sessions</h2>
-              <Link href="/history">
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </Link>
+              <Button variant="outline" size="sm" disabled>
+                <Link href="/history">View All</Link>
+              </Button>
             </div>
             <div className="space-y-4">
               {recentSessions.map((entry) => {

@@ -481,6 +481,49 @@ export default function ResultsView() {
     }, 100)
   }
 
+  // Calculate which page numbers to show (exactly 3 numbers with ellipsis)
+  const getPageNumbers = (): Array<{
+    page: number
+    type: 'number' | 'ellipsis'
+  }> => {
+    if (totalPages <= 3) {
+      // Show all pages if 3 or less
+      return Array.from({ length: totalPages }, (_, i) => ({
+        page: i,
+        type: 'number' as const,
+      }))
+    }
+
+    const pages: Array<{ page: number; type: 'number' | 'ellipsis' }> = []
+
+    if (currentPage <= 1) {
+      // At the beginning: show 1, 2, 3, ...
+      pages.push({ page: 0, type: 'number' })
+      pages.push({ page: 1, type: 'number' })
+      pages.push({ page: 2, type: 'number' })
+      if (totalPages > 3) {
+        pages.push({ page: -1, type: 'ellipsis' })
+      }
+    } else if (currentPage >= totalPages - 2) {
+      // At the end: show ..., last-2, last-1, last
+      if (totalPages > 3) {
+        pages.push({ page: -1, type: 'ellipsis' })
+      }
+      pages.push({ page: totalPages - 3, type: 'number' })
+      pages.push({ page: totalPages - 2, type: 'number' })
+      pages.push({ page: totalPages - 1, type: 'number' })
+    } else {
+      // In the middle: show ..., current-1, current, current+1, ...
+      pages.push({ page: -1, type: 'ellipsis' })
+      pages.push({ page: currentPage - 1, type: 'number' })
+      pages.push({ page: currentPage, type: 'number' })
+      pages.push({ page: currentPage + 1, type: 'number' })
+      pages.push({ page: -1, type: 'ellipsis' })
+    }
+
+    return pages
+  }
+
   if (state.questions.length === 0) {
     return (
       <div className="flex h-full w-full">
@@ -517,10 +560,12 @@ export default function ResultsView() {
   return (
     <div className="flex h-full w-full">
       {/* Left Sidebar - Filters and Question List */}
-      <aside className="w-64 fixed h-full border-t border-r bg-card flex-shrink-0 overflow-y-auto">
-        <div className="p-4 space-y-4">
+      <aside className="w-28 md:w-64 fixed h-full border-t border-r bg-card flex-shrink-0 overflow-y-auto">
+        <div className="px-2 py-4 md:px-4 space-y-4">
           <div>
-            <h3 className="text-sm font-semibold mb-3">Review your answers</h3>
+            <h3 className="text-sm font-semibold mb-3 md:text-base">
+              Review your answers
+            </h3>
 
             {/* Filters */}
             <RadioGroup
@@ -532,7 +577,7 @@ export default function ResultsView() {
                   <RadioGroupItem value="all" id="filter-all" />
                   <Label
                     htmlFor="filter-all"
-                    className="cursor-pointer text-sm"
+                    className="cursor-pointer text-xs md:text-sm"
                   >
                     All Questions
                   </Label>
@@ -541,7 +586,7 @@ export default function ResultsView() {
                   <RadioGroupItem value="incorrect" id="filter-incorrect" />
                   <Label
                     htmlFor="filter-incorrect"
-                    className="cursor-pointer text-sm"
+                    className="cursor-pointer text-xs md:text-sm"
                   >
                     Incorrect Answers
                   </Label>
@@ -550,7 +595,7 @@ export default function ResultsView() {
                   <RadioGroupItem value="flagged" id="filter-flagged" />
                   <Label
                     htmlFor="filter-flagged"
-                    className="cursor-pointer text-sm"
+                    className="cursor-pointer text-xs md:text-sm"
                   >
                     Flagged Questions
                   </Label>
@@ -569,7 +614,7 @@ export default function ResultsView() {
                     key={question.id}
                     onClick={() => handleQuestionClick(index)}
                     className={cn(
-                      'w-full flex items-start gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-left',
+                      'w-full flex items-start gap-1 md:gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-left',
                       paginatedQuestions.some((q) => q.id === question.id) &&
                         'bg-muted'
                     )}
@@ -582,20 +627,22 @@ export default function ResultsView() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-sm font-medium truncate hidden md:block">
                         Question {index + 1}
+                      </div>
+                      <div className="text-xs font-medium truncate block md:hidden">
+                        Q{index + 1}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge
                           variant="outline"
                           className={cn(
-                            'text-xs',
+                            'text-[10px] !transition-none !duration-0',
                             getDifficultyColor(question.difficulty),
-                            'text-white border-0 !transition-none !duration-0'
+                            'text-white border-0'
                           )}
                         >
-                          {question.difficulty.charAt(0).toUpperCase() +
-                            question.difficulty.slice(1)}
+                          {question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)}
                         </Badge>
                       </div>
                     </div>
@@ -608,27 +655,29 @@ export default function ResultsView() {
       </aside>
 
       {/* Main Content Area */}
-      <article className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+      <article className="flex-1 overflow-y-auto ml-28 md:ml-64">
+        <div className="max-w-7xl mx-auto px-2 md:px-6 py-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Quiz Results Overview</h1>
+            <h1 className="text-2xl font-bold text-center md:text-start">
+              Quiz Results Overview
+            </h1>
           </div>
 
           {/* Metrics Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div className="grid gap-3 md:gap-6 md:grid-cols-2 xl:grid-cols-4 mb-4 md:mb-8">
             {/* Overall Score */}
             <Card className="border-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardHeader className="pb-1 md:pb-3">
+                <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
                   Overall Score
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-2">
+                <div className="text-lg md:text-3xl font-bold mb-1 md:mb-2">
                   {earnedPoints} / {totalPossiblePoints}
                 </div>
-                <div className="text-sm text-muted-foreground mb-3">
+                <div className="text-xs md:text-sm text-muted-foreground mb-3">
                   You achieved {results.percentage}% accuracy
                 </div>
                 <Progress value={results.percentage} className="h-2" />
@@ -637,17 +686,17 @@ export default function ResultsView() {
 
             {/* Correct Answers */}
             <Card className="border-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardHeader className="pb-1 md:pb-3">
+                <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex gap-x-1 items-center">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                   Correct Answers
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-2">
+                <div className="text-lg md:text-3xl font-bold mb-1 md:mb-2">
                   {correctCount} / {state.questions.length}
                 </div>
-                <div className="text-sm text-muted-foreground mb-3">
+                <div className="text-xs md:text-sm text-muted-foreground mb-3">
                   Keep up the great work!
                 </div>
                 <Progress
@@ -659,17 +708,17 @@ export default function ResultsView() {
 
             {/* Incorrect Answers */}
             <Card className="border-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardHeader className="pb-1 md:pb-3">
+                <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex gap-x-1 items-center">
                   <XCircle className="h-4 w-4 text-red-500" />
                   Incorrect Answers
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-2">
+                <div className="text-lg md:text-3xl font-bold mb-1 md:mb-2">
                   {incorrectCount} / {state.questions.length}
                 </div>
-                <div className="text-sm text-muted-foreground mb-3">
+                <div className="text-xs md:text-sm text-muted-foreground mb-3">
                   Areas for improvement identified
                 </div>
                 <Progress
@@ -681,17 +730,17 @@ export default function ResultsView() {
 
             {/* Avg. Time per Question */}
             <Card className="border-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardHeader className="pb-1 md:pb-3">
+                <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex gap-x-1 items-center">
                   <Clock className="h-4 w-4" />
                   Avg. Time per Question
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-2">
+                <div className="text-lg md:text-3xl font-bold mb-1 md:mb-2">
                   {avgTimeMinutes} min {avgTimeSeconds} sec
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs md:text-sm text-muted-foreground mb-3">
                   Efficiency matters in timed sessions
                 </div>
               </CardContent>
@@ -701,7 +750,7 @@ export default function ResultsView() {
           {/* Detailed Question Analysis */}
           <Card className="border-2 mb-6">
             <CardHeader>
-              <CardTitle className="text-xl font-bold">
+              <CardTitle className="text-lg md:text-xl font-bold">
                 Review your answers, the correct solutions, and AI-powered
                 feedback
               </CardTitle>
@@ -875,39 +924,80 @@ export default function ResultsView() {
                 })}
               </div>
 
-              {/* Pagination */}
+              {/* Pagination at Bottom */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
+                <div className="flex items-center justify-between mt-8 pt-6 border-t">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="md:hidden mr-2 px-2"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="hidden md:inline-flex"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 0}
+                  >
+                    <ChevronLeft />
+                    Previous Page
+                  </Button>
+
+                  <div className="flex gap-2 items-center">
+                    {getPageNumbers().map((item, idx) => {
+                      if (item.type === 'ellipsis') {
+                        return (
+                          <span
+                            key={`ellipsis-${idx}`}
+                            className="px-2 text-muted-foreground"
+                          >
+                            ...
+                          </span>
+                        )
+                      }
+                      return (
+                        <Button
+                          key={item.page}
+                          size="sm"
+                          variant={
+                            currentPage === item.page ? 'default' : 'outline'
+                          }
+                          onClick={() => setCurrentPage(item.page)}
+                        >
+                          {item.page + 1}
+                        </Button>
+                      )
+                    })}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePreviousPage}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleNextPage}
-                      disabled={currentPage >= totalPages}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
+
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="md:hidden ml-2 px-2"
+                    onClick={handleNextPage}
+                    disabled={currentPage >= totalPages - 1}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="hidden md:inline-flex"
+                    onClick={handleNextPage}
+                    disabled={currentPage >= totalPages - 1}
+                  >
+                    Next Page
+                    <ChevronRight />
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
 
           {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pb-6">
+          <div className="flex flex-col lg:flex-row justify-center gap-4 pb-6">
             <Button
               onClick={handleRetakeQuiz}
               variant="outline"
