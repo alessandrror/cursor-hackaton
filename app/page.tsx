@@ -15,7 +15,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-24 md:py-32 text-center">
         <div className="max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8 animate-fadeIn">
+          <div className="inline-flex items-center gap-2 text-sm px-4 py-1 rounded-full bg-primary/15 dark:bg-primary text-primary dark:text-white mb-8 animate-fadeIn border border-primary/30 dark:border-primary/50 backdrop-blur-sm">
             <Zap className="h-4 w-4" />
             <span>AI-Powered Study Companion</span>
           </div>
@@ -32,9 +32,6 @@ export default function LandingPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 py-6">
-              Learn More
-            </Button>
           </div>
         </div>
       </section>

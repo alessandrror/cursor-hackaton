@@ -65,12 +65,12 @@ export default function Navbar({ isCollapsed }: { isCollapsed: boolean }) {
                 className="gap-2 !transition-none !duration-0"
               >
                 <User className="h-4 w-4" />
-                Account
+                {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Account'}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>
-                {user?.email || 'Guest User'}
+                {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'Guest User'}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/settings')}>

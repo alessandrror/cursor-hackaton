@@ -40,33 +40,33 @@
   }
 
   .dark {
-    /* Dark mode palette */
-    --background: 24 9.8% 5%; /* #0c0a09 */
-    --foreground: 220 14% 91%; /* #e5e7eb */
+    /* Dark mode palette - improved contrast for readability */
+    --background: 24 9.8% 10%; /* Increased from 5% */
+    --foreground: 220 14% 95%; /* Increased from 91% for better contrast */
 
     /* Surfaces */
-    --card: 0 0% 4%;
-    --card-foreground: 220 14% 91%;
-    --popover: 0 0% 4%;
-    --popover-foreground: 220 14% 91%;
+    --card: 0 0% 8%; /* Slightly lighter, better contrast */
+    --card-foreground: 220 14% 95%; /* Ensure readability */
+    --popover: 0 0% 8%;
+    --popover-foreground: 220 14% 95%;
 
     /* Brand tokens — Cerebryx */
     --primary: 262.1 83.3% 57.8%; /* #7c3aed */
-    --primary-foreground: 0 0% 4%;
+    --primary-foreground: 0 0% 100%; /* White on primary for readability */
     --secondary: 199.4 88.7% 53.1%; /* #0ea5e9 */
-    --secondary-foreground: 0 0% 4%;
+    --secondary-foreground: 0 0% 100%; /* White on secondary for readability */
     --accent: 173.4 72.3% 41.8%; /* #14b8a6 */
-    --accent-foreground: 0 0% 4%;
+    --accent-foreground: 0 0% 100%; /* White on accent for readability */
     --success: 83.7 85.4% 43.9%; /* #84cc16 */
-    --success-foreground: 0 0% 4%;
+    --success-foreground: 0 0% 100%; /* White on success for readability */
 
     /* Support tokens */
     --muted: 0 0% 10%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 215 20.2% 75%; /* Increased from 65.1% */
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 220 14% 91%;
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
+    --destructive-foreground: 220 14% 95%; /* Improved contrast */
+    --border: 0 0% 20%; /* Increased from 14% */
+    --input: 0 0% 18%; /* Increased from 14% */
     --ring: 262.1 83.3% 57.8%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -82,13 +82,59 @@
   }
   html {
     overflow-y: auto;
+    --text-scale: 1;
+  }
+  /* Apply text scaling to html element */
+  html.accessibility-text-scale-08 {
+    --text-scale: 0.8;
+  }
+  html.accessibility-text-scale-09 {
+    --text-scale: 0.9;
+  }
+  html.accessibility-text-scale-10 {
+    --text-scale: 1;
+  }
+  html.accessibility-text-scale-11 {
+    --text-scale: 1.1;
+  }
+  html.accessibility-text-scale-12 {
+    --text-scale: 1.2;
+  }
+  html.accessibility-text-scale-13 {
+    --text-scale: 1.3;
+  }
+  html.accessibility-text-scale-14 {
+    --text-scale: 1.4;
+  }
+  html.accessibility-text-scale-15 {
+    --text-scale: 1.5;
   }
   body {
     @apply bg-background text-foreground;
     overflow-y: auto;
     transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    font-size: calc(1rem * var(--text-scale, 1));
   }
   button {
     @apply !transition-none !duration-0;
   }
 }
+
+/* Accessibility features */
+.accessibility-underline-links a {
+  text-decoration: underline;
+}
+
+.accessibility-grayscale {
+  filter: grayscale(100%);
+}
+
+.accessibility-negative-contrast {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.accessibility-sepia {
+  filter: sepia(100%);
+}
+
+/* Remove duplicate text scale classes - now handled above */

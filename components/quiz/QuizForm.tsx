@@ -577,7 +577,7 @@ export default function QuizForm() {
                         htmlFor={`${question.id}-${optionIndex}`}
                         className={cn(
                           'flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:border-primary/50 cursor-pointer bg-card',
-                          isChecked && 'border-primary bg-primary/10'
+                          isChecked && 'border-primary bg-primary/20 dark:bg-primary/30'
                         )}
                       >
                         <Checkbox
@@ -617,7 +617,7 @@ export default function QuizForm() {
                         htmlFor={`${question.id}-${optionIndex}`}
                         className={cn(
                           'flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:border-primary/50 cursor-pointer bg-card',
-                          isSelected && 'border-primary bg-primary/10'
+                          isSelected && 'border-primary bg-primary/20 dark:bg-primary/30'
                         )}
                       >
                         <RadioGroupItem
@@ -642,22 +642,30 @@ export default function QuizForm() {
               onValueChange={(value) => handleAnswerChange(question.id, value)}
               className="space-y-3"
             >
-              {question.options.map((option, optionIndex) => (
-                <label
-                  key={optionIndex}
-                  htmlFor={`${question.id}-${optionIndex}`}
-                  className="flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:border-primary/50 cursor-pointer bg-card"
-                >
-                  <RadioGroupItem
-                    value={option}
-                    id={`${question.id}-${optionIndex}`}
-                    className="h-5 w-5"
-                  />
-                  <span className="cursor-pointer flex-1 text-sm">
-                    {option}
-                  </span>
-                </label>
-              ))}
+              {question.options.map((option, optionIndex) => {
+                const isSelected =
+                  typeof currentAnswer === 'string' &&
+                  currentAnswer === option
+                return (
+                  <label
+                    key={optionIndex}
+                    htmlFor={`${question.id}-${optionIndex}`}
+                    className={cn(
+                      'flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:border-primary/50 cursor-pointer bg-card',
+                      isSelected && 'border-primary bg-primary/20 dark:bg-primary/30'
+                    )}
+                  >
+                    <RadioGroupItem
+                      value={option}
+                      id={`${question.id}-${optionIndex}`}
+                      className="h-5 w-5"
+                    />
+                    <span className="cursor-pointer flex-1 text-sm">
+                      {option}
+                    </span>
+                  </label>
+                )
+              })}
             </RadioGroup>
           )}
 

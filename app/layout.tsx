@@ -6,9 +6,11 @@ import { AuthProvider } from '@/providers/AuthProvider'
 import { ClarityProvider } from '@/providers/ClarityProvider'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
 import { Toaster } from '@/components/ui/toaster'
 import AppLayout from '@/components/AppLayout'
 import SetupWrapper from '@/components/setup/SetupWrapper'
+import { AccessibilityToolbar } from '@/components/AccessibilityToolbar'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -36,19 +38,22 @@ export default function RootLayout({
         <ClarityProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
+            defaultTheme="light"
             enableSystem={false}
           >
-            <AuthProvider>
-              <SessionProvider>
-                <SidebarProvider>
-                  <SetupWrapper>
-                    <AppLayout>{children}</AppLayout>
-                  </SetupWrapper>
-                  <Toaster />
-                </SidebarProvider>
-              </SessionProvider>
-            </AuthProvider>
+            <AccessibilityProvider>
+              <AuthProvider>
+                <SessionProvider>
+                  <SidebarProvider>
+                    <SetupWrapper>
+                      <AppLayout>{children}</AppLayout>
+                    </SetupWrapper>
+                    <AccessibilityToolbar />
+                    <Toaster />
+                  </SidebarProvider>
+                </SessionProvider>
+              </AuthProvider>
+            </AccessibilityProvider>
           </ThemeProvider>
         </ClarityProvider>
       </body>

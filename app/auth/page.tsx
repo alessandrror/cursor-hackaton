@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { BookOpen, Mail, Lock, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,12 +13,28 @@ import { useToast } from '@/hooks/use-toast'
 
 export default function AuthPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signInWithGoogle, signInWithOTP, verifyOTP } = useAuth()
   const { toast } = useToast()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isOTP, setIsOTP] = useState(false)
   const [otp, setOtp] = useState('')
+
+  // Handle error messages from callback
+  useEffect(() => {
+    const error = searchParams.get('error')
+    const message = searchParams.get('message')
+    if (error && message) {
+      toast({
+        title: 'Authentication failed',
+        description: decodeURIComponent(message),
+        variant: 'destructive',
+      })
+      // Clean up URL
+      router.replace('/auth')
+    }
+  }, [searchParams, router, toast])
 
   const handleGoogleSignIn = async () => {
     try {
@@ -231,7 +247,7 @@ export default function AuthPage() {
 
             <div className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/study" className="text-primary hover:underline">
+              <Link href="/study" className="text-primary hover:underline font-medium dark:text-secondary">
                 Continue as guest
               </Link>
             </div>
