@@ -302,173 +302,176 @@ export default function SettingsView() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-row items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground text-base mt-1">
-            Manage your study session preferences
-          </p>
-        </div>
-      </div>
-
-      {/* Question Range Settings */}
-      <Card className="border-2 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Target className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">
-                Question Range Settings
-              </CardTitle>
-              <CardDescription className="text-base mt-1">
-                Configure the range of questions generated for your quizzes
-                (5-50 questions)
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <QuestionRangeSettings
-            currentRange={state.questionRange}
-            onRangeChange={handleRangeChange}
-          />
-        </CardContent>
-      </Card>
-
-      {/* History Settings */}
-      <Card className="border-2 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center">
-              <Database className="h-6 w-6 text-secondary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">
-                History Settings
-              </CardTitle>
-              <CardDescription className="text-base mt-1">
-                Configure how your study sessions are saved locally
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Enable/Disable History */}
-          <div className="flex items-center justify-between p-4 rounded-lg border-2">
-            <div className="space-y-0.5 flex-1">
-              <Label
-                htmlFor="enable-history"
-                className="text-base font-semibold"
-              >
-                Enable History
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Save your study sessions locally on this device
-              </p>
-            </div>
-            <Switch
-              id="enable-history"
-              checked={settings.enabled}
-              onCheckedChange={handleToggleHistory}
-            />
-          </div>
-
-          {/* Max Entries */}
-          <div className="space-y-3 p-4 rounded-lg border-2">
-            <Label htmlFor="max-entries" className="text-base font-semibold">
-              Maximum History Entries
-            </Label>
-            <div className="flex items-center gap-3">
-              <Input
-                id="max-entries"
-                type="number"
-                min="1"
-                max="1000"
-                value={settings.maxEntries}
-                onChange={(e) => handleMaxEntriesChange(e.target.value)}
-                className="max-w-[200px] h-10"
-              />
-              <span className="text-sm text-muted-foreground">sessions</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Older sessions will be automatically removed when this limit is
-              reached
+    <div className="px-6 py-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 md:gap-0">
+          <div>
+            <h1 className="text-3xl font-bold">Settings</h1>
+            <p className="text-muted-foreground text-base mt-1">
+              Manage your study session preferences
             </p>
           </div>
+        </div>
 
-          {/* Current Stats */}
-          <div className="pt-4 border-t">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-muted/50 text-center">
-                <div className="text-3xl font-bold">{history.length}</div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  Saved Sessions
+        {/* Question Range Settings */}
+        <Card className="border-2 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Target className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold">
+                  Question Range Settings
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Configure the range of questions generated for your quizzes
+                  (5-50 questions)
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <QuestionRangeSettings
+              currentRange={state.questionRange}
+              onRangeChange={handleRangeChange}
+            />
+          </CardContent>
+        </Card>
+
+        {/* History Settings */}
+        <Card className="border-2 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <Database className="h-6 w-6 text-secondary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold">
+                  History Settings
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Configure how your study sessions are saved locally
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Enable/Disable History */}
+            <div className="flex items-center justify-between p-4 rounded-lg border-2">
+              <div className="space-y-0.5 flex-1">
+                <Label
+                  htmlFor="enable-history"
+                  className="text-base font-semibold"
+                >
+                  Enable History
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Save your study sessions locally on this device
+                </p>
+              </div>
+              <Switch
+                id="enable-history"
+                checked={settings.enabled}
+                onCheckedChange={handleToggleHistory}
+              />
+            </div>
+
+            {/* Max Entries */}
+            <div className="space-y-3 p-4 rounded-lg border-2">
+              <Label htmlFor="max-entries" className="text-base font-semibold">
+                Maximum History Entries
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="max-entries"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={settings.maxEntries}
+                  onChange={(e) => handleMaxEntriesChange(e.target.value)}
+                  className="max-w-[200px] h-10"
+                />
+                <span className="text-sm text-muted-foreground">sessions</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Older sessions will be automatically removed when this limit is
+                reached
+              </p>
+            </div>
+
+            {/* Current Stats */}
+            <div className="pt-4 border-t">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-muted/50 text-center">
+                  <div className="text-3xl font-bold">{history.length}</div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Saved Sessions
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50 text-center">
+                  <div className="text-3xl font-bold">
+                    {(JSON.stringify(history).length / 1024 / 1024).toFixed(2)}{' '}
+                    MB
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Storage Used
+                  </div>
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-muted/50 text-center">
-                <div className="text-3xl font-bold">
-                  {(JSON.stringify(history).length / 1024 / 1024).toFixed(2)} MB
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  Storage Used
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Data Management */}
+        <Card className="border-2 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Trash2 className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold">
+                  Data Management
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Export or delete your saved history
+                </CardDescription>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Data Management */}
-      <Card className="border-2 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center">
-              <Trash2 className="h-6 w-6 text-accent" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                variant="outline"
+                onClick={handleExportHistory}
+                disabled={history.length === 0}
+                className="flex-1 gap-2 h-12 text-base"
+              >
+                <Download className="h-5 w-5" />
+                Export History
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleClearHistory}
+                disabled={history.length === 0}
+                className="flex-1 gap-2 h-12 text-base"
+              >
+                <Trash2 className="h-5 w-5" />
+                Clear All History
+              </Button>
             </div>
-            <div>
-              <CardTitle className="text-xl font-bold">
-                Data Management
-              </CardTitle>
-              <CardDescription className="text-base mt-1">
-                Export or delete your saved history
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button
-              variant="outline"
-              onClick={handleExportHistory}
-              disabled={history.length === 0}
-              className="flex-1 gap-2 h-12 text-base"
-            >
-              <Download className="h-5 w-5" />
-              Export History
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleClearHistory}
-              disabled={history.length === 0}
-              className="flex-1 gap-2 h-12 text-base"
-            >
-              <Trash2 className="h-5 w-5" />
-              Clear All History
-            </Button>
-          </div>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Your data is stored locally on your device and never sent to any
-              server
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Your data is stored locally on your device and never sent to any
+                server
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

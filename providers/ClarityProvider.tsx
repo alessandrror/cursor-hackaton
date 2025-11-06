@@ -11,7 +11,7 @@ interface ClarityProviderProps {
 export function ClarityProvider({ children, projectId }: ClarityProviderProps) {
   const clarityId = projectId || process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID
   const [shouldLoad, setShouldLoad] = useState(false)
-  
+
   // Only initialize Clarity in production environment
   const isProduction = process.env.NODE_ENV === 'production'
   const shouldInitialize = isProduction && clarityId
@@ -49,5 +49,3 @@ export function ClarityProvider({ children, projectId }: ClarityProviderProps) {
     </>
   )
 }
-
-

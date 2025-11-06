@@ -11,14 +11,19 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useWindow } from '@/hooks/use-window'
 
 export default function Sidebar({
   isCollapsed,
   toggleSidebar,
+  ref,
 }: {
   isCollapsed: boolean
   toggleSidebar: () => void
+  ref: React.RefObject<HTMLElement>
 }) {
+  const { width } = useWindow()
+  const isMobile = width < 768;
   const pathname = usePathname()
 
   const isActive = (path: string) => {
@@ -68,8 +73,9 @@ export default function Sidebar({
         <div className="flex h-full flex-col">
           {/* Navigation */}
           <nav
+            ref={ref}
             className={cn(
-              'h-full flex md:static fixed z-11 top-16 border-t md:top-0 w-full md:w-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:bg-transparent md:backdrop-blur-none md:supports-[backdrop-filter]:bg-transparent transition-[transform] duration-300 md:transition-noe md:duration-0',
+              'h-full flex md:static fixed z-11 top-16 border-t md:top-0 w-full md:w-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:bg-transparent md:backdrop-blur-none md:supports-[backdrop-filter]:bg-transparent transition-[transform,width] duration-300 md:transition-none md:duration-0',
               isCollapsed
                 ? '-translate-x-full md:-translate-x-0'
                 : 'translate-x-0'
@@ -80,7 +86,11 @@ export default function Sidebar({
                 const Icon = item.icon
                 const active = isActive(item.href)
                 return (
-                  <Link key={item.href} href={item.href} className="w-full">
+                  <Link key={item.href} href={item.href} className="w-full" onClick={() => {
+                    if (isMobile) {
+                      toggleSidebar()
+                    }
+                  }}>
                     <Button
                       variant={active ? 'secondary' : 'ghost'}
                       className={cn(

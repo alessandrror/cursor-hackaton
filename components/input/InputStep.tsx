@@ -168,127 +168,133 @@ export default function InputStep() {
   const canSubmit = text.trim() && !isProcessing && !isTrialLoading
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-6 py-8 space-y-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="text-center md:text-start">
-            <h1 className="text-4xl font-bold">Prepare Your Study Content</h1>
-            <p className="text-lg text-muted-foreground">
-              Upload a PDF document or paste text to begin an AI-powered reading and
-              quizzing session.
-            </p>
+    <div className="px-6 py-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4 md:gap-0">
+            <div>
+              <h1 className="text-3xl font-bold">Prepare Your Study Content</h1>
+              <p className="text-muted-foreground text-base mt-1">
+                Upload a PDF document or paste text to begin an AI-powered
+                reading and quizzing session.
+              </p>
+            </div>
+            {!isTrialLoading && trialStatus.remaining !== Infinity && (
+              <Badge
+                variant="outline"
+                className="text-sm self-center md:self-auto"
+              >
+                {trialStatus.remaining} of 3 free sessions remaining
+              </Badge>
+            )}
           </div>
-          {!isTrialLoading && trialStatus.remaining !== Infinity && (
-            <Badge variant="outline" className="text-sm self-center md:self-auto">
-              {trialStatus.remaining} of 3 free sessions remaining
-            </Badge>
-          )}
         </div>
-      </div>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Upload Document */}
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-xl">Upload Document</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Drag & drop your PDF file here, or click to select a file.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Drag & Drop Area */}
-            <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              className={`
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column: Upload Document */}
+          <Card className="border-2">
+            <CardHeader>
+              <CardTitle className="text-xl">Upload Document</CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                Drag & drop your PDF file here, or click to select a file.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Drag & Drop Area */}
+              <div
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                className={`
                 relative border-2 border-dashed rounded-lg p-12 text-center
                 ${dragActive ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}
                 ${isProcessing ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:border-primary/50'}
               `}
-              onClick={() => !isProcessing && fileInputRef.current?.click()}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={handleFileUpload}
-                className="hidden"
-                aria-label="Upload PDF"
-              />
+                onClick={() => !isProcessing && fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  aria-label="Upload PDF"
+                />
 
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <div className="flex flex-col items-center space-y-2">
-                  <ArrowUp className="h-12 w-12 text-primary" />
-                  <div className="h-0.5 w-16 bg-border"></div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-base font-medium">
-                    Drag &apos;n&apos; drop a PDF here, or click to select file
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Only PDF files are supported.
-                  </p>
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="flex flex-col items-center space-y-2">
+                    <ArrowUp className="h-12 w-12 text-primary" />
+                    <div className="h-0.5 w-16 bg-border"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-base font-medium">
+                      Drag &apos;n&apos; drop a PDF here, or click to select
+                      file
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Only PDF files are supported.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Best Practices Note */}
-            <p className="text-xs text-muted-foreground">
-              For best results, upload clean, text-searchable PDFs. Avoid
-              scanned documents with poor resolution.
-            </p>
-          </CardContent>
-        </Card>
+              {/* Best Practices Note */}
+              <p className="text-xs text-muted-foreground">
+                For best results, upload clean, text-searchable PDFs. Avoid
+                scanned documents with poor resolution.
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Right Column: Paste Text Content */}
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-xl">Paste Text Content</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Alternatively, paste any text content here to start your study
-              session.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Text Area */}
-            <Textarea
-              ref={textareaRef}
-              placeholder="Paste your article, notes, or any text here..."
-              value={text}
-              onChange={(e) => handleTextChange(e.target.value)}
-              className="min-h-[400px] resize-y text-base overflow-y-auto"
-              style={{ minHeight: '400px' }}
-            />
+          {/* Right Column: Paste Text Content */}
+          <Card className="border-2">
+            <CardHeader>
+              <CardTitle className="text-xl">Paste Text Content</CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                Alternatively, paste any text content here to start your study
+                session.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Text Area */}
+              <Textarea
+                ref={textareaRef}
+                placeholder="Paste your article, notes, or any text here..."
+                value={text}
+                onChange={(e) => handleTextChange(e.target.value)}
+                className="min-h-[400px] resize-y text-base overflow-y-auto"
+                style={{ minHeight: '400px' }}
+              />
 
-            {/* Character Count */}
-            <p className="text-sm text-muted-foreground">
-              Character count: {characterCount}
-            </p>
-          </CardContent>
-        </Card>
+              {/* Character Count */}
+              <p className="text-sm text-muted-foreground">
+                Character count: {characterCount}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex justify-center pt-4">
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="min-w-[300px] h-12 text-base font-semibold"
+            size="lg"
+          >
+            Start Reading Session
+          </Button>
+        </div>
+
+        {/* Registration Modal */}
+        <RegistrationModal
+          open={showRegistrationModal}
+          onOpenChange={setShowRegistrationModal}
+        />
       </div>
-
-      {/* Submit Button */}
-      <div className="flex justify-center pt-4">
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="min-w-[300px] h-12 text-base font-semibold"
-          size="lg"
-        >
-          Start Reading Session
-        </Button>
-      </div>
-
-      {/* Registration Modal */}
-      <RegistrationModal
-        open={showRegistrationModal}
-        onOpenChange={setShowRegistrationModal}
-      />
     </div>
   )
 }

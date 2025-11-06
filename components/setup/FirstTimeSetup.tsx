@@ -1,7 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -44,8 +50,14 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
       setError('Range must be between 5 and 50 questions')
       return
     }
-    
+
     setQuestionRange({ min: minQuestions, max: maxQuestions })
+    localStorage.setItem('cerebryx-setup-complete', 'true')
+    onComplete()
+  }
+
+  const handleSetupLater = () => {
+    setQuestionRange({ min: 10, max: 20 })
     localStorage.setItem('cerebryx-setup-complete', 'true')
     onComplete()
   }
@@ -58,6 +70,13 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
     return '30+ minutes'
   }
 
+  useEffect(() => {
+    document.body.classList.add('!overflow-y-hidden')
+    return () => {
+      document.body.classList.remove('!overflow-y-hidden')
+    }
+  }, [])
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-2xl">
@@ -67,7 +86,8 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
             <CardTitle className="text-2xl">Welcome to Cerebryx!</CardTitle>
           </div>
           <CardDescription className="text-lg">
-            Let&apos;s set up your preferred question range for a personalized study experience
+            Let&apos;s set up your preferred question range for a personalized
+            study experience
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -124,7 +144,9 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
                 min={10}
                 max={50}
                 value={maxQuestions}
-                onChange={(e) => handleMaxChange(parseInt(e.target.value) || 10)}
+                onChange={(e) =>
+                  handleMaxChange(parseInt(e.target.value) || 10)
+                }
                 className="w-20"
               />
             </div>
@@ -140,18 +162,28 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
           {/* Preview */}
           <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
             <div className="text-sm space-y-2">
-              <div className="font-medium text-blue-400">Your Quiz Preference</div>
+              <div className="font-medium text-blue-400">
+                Your Quiz Preference
+              </div>
               <div className="flex justify-between">
                 <span>Question range:</span>
-                <span className="font-medium">{minQuestions}-{maxQuestions} questions</span>
+                <span className="font-medium">
+                  {minQuestions}-{maxQuestions} questions
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Average questions:</span>
-                <span className="font-medium">{Math.round((minQuestions + maxQuestions) / 2)} questions</span>
+                <span className="font-medium">
+                  {Math.round((minQuestions + maxQuestions) / 2)} questions
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Estimated time:</span>
-                <span className="font-medium">{getEstimatedTime(Math.round((minQuestions + maxQuestions) / 2))}</span>
+                <span className="font-medium">
+                  {getEstimatedTime(
+                    Math.round((minQuestions + maxQuestions) / 2)
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -161,7 +193,10 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
             <div className="flex items-start gap-2">
               <Settings className="h-4 w-4 mt-0.5 text-muted-foreground" />
               <div className="text-sm text-muted-foreground">
-                <p>You can always change this preference later in the Settings page.</p>
+                <p>
+                  You can always change this preference later in the Settings
+                  page.
+                </p>
               </div>
             </div>
           </div>
@@ -169,6 +204,9 @@ export default function FirstTimeSetup({ onComplete }: FirstTimeSetupProps) {
           {/* Save Button */}
           <Button onClick={handleSave} className="w-full" size="lg">
             Start Studying!
+          </Button>
+          <Button onClick={handleSetupLater} className="w-full" size="lg" variant="outline">
+            Setup Later
           </Button>
         </CardContent>
       </Card>

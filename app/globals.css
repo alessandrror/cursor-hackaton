@@ -81,7 +81,6 @@
     @apply border-border;
   }
   html {
-    overflow-y: auto;
     --text-scale: 1;
   }
   /* Apply text scaling to html element */
@@ -111,7 +110,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    overflow-y: auto;
     transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
     font-size: calc(1rem * var(--text-scale, 1));
   }

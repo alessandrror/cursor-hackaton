@@ -61,25 +61,27 @@ export function useHistory() {
     // Check settings from localStorage directly to ensure we have the latest value
     try {
       const savedSettings = localStorage.getItem(SETTINGS_KEY)
-      const currentSettings = savedSettings ? JSON.parse(savedSettings) : DEFAULT_SETTINGS
-      
+      const currentSettings = savedSettings
+        ? JSON.parse(savedSettings)
+        : DEFAULT_SETTINGS
+
       if (!currentSettings.enabled) {
-        console.log('History is disabled, not saving entry')
         return
       }
 
       const savedHistory = localStorage.getItem(HISTORY_KEY)
-      const currentHistory: HistoryEntry[] = savedHistory ? JSON.parse(savedHistory) : []
-      
+      const currentHistory: HistoryEntry[] = savedHistory
+        ? JSON.parse(savedHistory)
+        : []
+
       const newHistory = [entry, ...currentHistory]
-      
+
       // Trim to max entries
       const trimmedHistory = newHistory.slice(0, currentSettings.maxEntries)
-      
+
       localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmedHistory))
       setHistory(trimmedHistory)
-      
-      console.log('History entry saved:', entry.id)
+
     } catch (error) {
       console.error('Error adding history entry:', error)
     }
@@ -87,7 +89,7 @@ export function useHistory() {
 
   // Delete an entry
   const deleteEntry = (id: string) => {
-    const newHistory = history.filter(entry => entry.id !== id)
+    const newHistory = history.filter((entry) => entry.id !== id)
     saveHistory(newHistory)
   }
 
@@ -127,4 +129,3 @@ export function useHistory() {
     updateSettings,
   }
 }
-

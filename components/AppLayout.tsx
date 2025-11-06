@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isLandingPage = pathname === '/'
   const isAuthPage = pathname === '/auth'
-  const { isCollapsed, toggleSidebar } = useSidebar()
+  const { isCollapsed, toggleSidebar, sidebarRef } = useSidebar()
 
   if (isLandingPage) {
     return (
@@ -32,7 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} ref={sidebarRef} />
       <Navbar isCollapsed={isCollapsed} />
       <main
         className={cn(

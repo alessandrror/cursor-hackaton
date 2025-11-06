@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import FirstTimeSetup from './FirstTimeSetup'
 
 interface SetupWrapperProps {
@@ -8,15 +9,23 @@ interface SetupWrapperProps {
 }
 
 export default function SetupWrapper({ children }: SetupWrapperProps) {
+  const pathname = usePathname()
+
   const [showSetup, setShowSetup] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
     // Check if setup has been completed
     const setupComplete = localStorage.getItem('cerebryx-setup-complete')
-    setShowSetup(!setupComplete)
+
+    if (pathname === '/study') {
+      setShowSetup(!setupComplete)
+    } else {
+      setShowSetup(false)
+    }
+
     setIsLoaded(true)
-  }, [])
+  }, [pathname])
 
   const handleSetupComplete = () => {
     setShowSetup(false)
