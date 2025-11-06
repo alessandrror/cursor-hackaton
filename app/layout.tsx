@@ -35,7 +35,7 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} font-sans`}
         suppressHydrationWarning={true}
       >
-        {/* <ClarityProvider> */}
+        <ClarityProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
@@ -55,7 +55,7 @@ export default function RootLayout({
               </AuthProvider>
             </AccessibilityProvider>
           </ThemeProvider>
-        {/* </ClarityProvider> */}
+        </ClarityProvider>
       </body>
     </html>
   )
